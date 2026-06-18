@@ -11,8 +11,8 @@
   <div class="app">
     <div id="sc-home" class="sc on">
       <div class="tbar"><h2>홈</h2></div>
-      <div class="stit" style="padding:16px 20px 8px; font-size:13px; font-weight:700; color:var(--mu);">다가올 관람 일정</div>
-      <div id="home-ticket-list"></div>
+      <div class="stit">다가올 관람 일정</div>
+      <div id="home-ticket-list" style="padding: 0 20px;"></div>
     </div>
 
     <div id="sc-cal" class="sc">
@@ -24,12 +24,10 @@
         </div>
         <button class="rbtn" onclick="openRecordModal()">+ 관람 등록</button>
       </div>
-      
       <div style="padding: 10px 20px; display: flex; gap: 8px;">
         <select class="inp" id="filter-show" style="margin-bottom:0; padding:8px;" onchange="updateActorFilter()"></select>
         <select class="inp" id="filter-actor" style="margin-bottom:0; padding:8px;" onchange="loadCalendar()"></select>
       </div>
-      
       <div class="cal-header">
         <span style="color:#C0392B;">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span style="color:#2A5FA8;">토</span>
       </div>
@@ -39,16 +37,16 @@
     <div id="sc-stamp" class="sc">
       <div class="tbar">
         <h2>도장판 & 혜택</h2>
-        <button class="rbtn" onclick="openModal('m-add-show')">+ 공연 추가</button>
+        <button class="rbtn" onclick="openShowModal()">+ 공연 추가</button>
       </div>
       <div id="stamp-list-area" style="padding: 20px;"></div>
-      <div id="stamp-detail-area" style="display:none; padding: 20px;"></div>
+      <div id="stamp-detail-area" style="display:none; padding: 20px; background: #111520; min-height: 100%;"></div>
     </div>
 
     <div id="sc-settings" class="sc">
       <div class="tbar"><h2>설정</h2></div>
       <div style="padding: 20px;">
-        <button class="mbtn p" style="width:100%; margin-bottom:14px;" onclick="exportData()">⬇ 데이터 백업 (JSON 다운로드)</button>
+        <button class="mbtn p" style="width:100%; margin-bottom:14px;" onclick="exportData()">⬇ 데이터 백업 (JSON)</button>
         <button class="mbtn s" style="width:100%;" onclick="document.getElementById('import-file').click()">⬆ 데이터 복원</button>
         <input type="file" id="import-file" style="display:none;" accept=".json" onchange="importData(event)">
       </div>
@@ -62,31 +60,35 @@
     </div>
   </div>
 
-  <div class="ov" id="m-add-show">
+  <div class="ov" id="m-show">
     <div class="modal">
-      <h3>새 공연 추가</h3>
+      <h3 id="show-modal-title">새 공연 추가</h3>
+      <input type="hidden" id="edit-show-id">
+      
       <label class="lbl">공연명</label>
       <input class="inp" type="text" id="add-show-name" placeholder="예: 시데레우스">
 
-      <label class="lbl">캘린더 표시 색상</label>
-      <input type="color" id="add-show-color" value="#7C5CBF" style="width:100%; height:44px; border:none; background:none; cursor:pointer; margin-bottom:14px;">
+      <label class="lbl">캘린더 표시 색상 (맞춤 설정)</label>
+      <div style="display: flex; gap: 10px; margin-bottom: 14px;">
+        <input type="color" id="add-show-color-picker" value="#7C5CBF" style="width: 50px; height: 44px; border: none; cursor: pointer; padding: 0; background: none;" oninput="document.getElementById('add-show-color-hex').value = this.value">
+        <input class="inp" type="text" id="add-show-color-hex" value="#7C5CBF" style="margin-bottom: 0;" oninput="document.getElementById('add-show-color-picker').value = this.value">
+      </div>
 
-      <label class="lbl">도장판 혜택 설정</label>
+      <label class="lbl">도장판 혜택 설정 (예: 5회 관람 시 40% 할인)</label>
       <div id="reward-rows-container"></div>
       <button class="mbtn s" style="width:100%; padding:10px; margin-bottom:14px; font-size:13px;" onclick="addRewardRow()">+ 혜택 구간 추가</button>
 
-      <div class="brow">
-        <button class="mbtn s" onclick="closeModal('m-add-show')">취소</button>
-        <button class="mbtn p" onclick="saveShow()">추가하기</button>
-      </div>
+      <div class="brow" id="show-action-btns"></div>
     </div>
   </div>
 
   <div class="ov" id="m-record">
     <div class="modal">
-      <h3>관람 등록</h3>
+      <h3 id="record-modal-title">관람 등록</h3>
+      <input type="hidden" id="edit-record-id">
+
       <label class="lbl">공연 선택</label>
-      <select class="inp" id="r-show"></select>
+      <select class="inp" id="r-show" onchange="updateRecordFormDeps()"></select>
       
       <div style="display: flex; gap: 10px;">
         <div style="flex:1;">
@@ -95,12 +97,18 @@
         </div>
         <div style="flex:1;">
           <label class="lbl">시간 (수기)</label>
-          <input class="inp" type="text" id="r-time" placeholder="예: 14:00, 낮공">
+          <input class="inp" type="text" id="r-time" placeholder="예: 14:00">
         </div>
       </div>
 
-      <label class="lbl">캐스팅 (쉼표로 구분)</label>
+      <label class="lbl">캐스팅 (쉼표 구분)</label>
       <input class="inp" type="text" id="r-cast" placeholder="예: 홍길동, 이순신">
+
+      <label class="lbl">도장판 선택</label>
+      <select class="inp" id="r-pad"></select>
+
+      <label class="lbl">할인권종 사용</label>
+      <select class="inp" id="r-discount"></select>
 
       <label class="lbl">좌석 정보</label>
       <input class="inp" type="text" id="r-seat" placeholder="예: 1층 B구역 12열 14번">
@@ -114,13 +122,38 @@
 
       <label class="lbl">예매 내역서 첨부</label>
       <input class="inp" type="file" id="r-image" accept="image/*">
+      <div id="r-image-preview" style="font-size: 12px; color: var(--purple); margin-bottom: 14px;"></div>
 
       <label class="lbl">메모</label>
       <input class="inp" type="text" id="r-memo" placeholder="특이사항">
 
+      <div class="brow" id="record-action-btns"></div>
+    </div>
+  </div>
+
+  <div class="ov" id="m-wallet">
+    <div class="modal">
+      <h3>지갑 수동 조작</h3>
+      <input type="hidden" id="w-show-id">
+      <label class="lbl">조작할 할인권/혜택</label>
+      <select class="inp" id="w-label"></select>
+      
+      <div style="display: flex; gap: 10px;">
+        <div style="flex:1;">
+          <label class="lbl">유형</label>
+          <select class="inp" id="w-type">
+            <option value="add">추가 지급 (+)</option>
+            <option value="sub">수동 사용 (-)</option>
+          </select>
+        </div>
+        <div style="flex:1;">
+          <label class="lbl">수량</label>
+          <input class="inp" type="number" id="w-amount" value="1" min="1">
+        </div>
+      </div>
       <div class="brow">
-        <button class="mbtn s" onclick="closeModal('m-record')">취소</button>
-        <button class="mbtn p" onclick="saveRecord()">등록하기</button>
+        <button class="mbtn s" onclick="closeModal('m-wallet')">취소</button>
+        <button class="mbtn p" onclick="saveWalletManual()">적용</button>
       </div>
     </div>
   </div>
