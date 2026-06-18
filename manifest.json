@@ -1,6 +1,6 @@
 {
-  "name": "회전문 트래커",
-  "short_name": "관극 기록",
+  "name": "도장판 모음",
+  "short_name": "도장판",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#F7F6FF",
