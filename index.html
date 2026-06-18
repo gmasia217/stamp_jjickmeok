@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>통합 관극 트래커</title>
+<title>찍먹극 도장 계산기</title>
 <style>
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap');
@@ -424,7 +424,7 @@ const DB = {
 let currentShowId = null;
 let currentMulti = 1;
 let currentReceiptBase64 = "";
-const DEFAULT_DISCOUNTS = ["프리뷰할", "조예할", "재관할", "청소년할", "타임세일", "나눔", "교환"];
+const DEFAULT_DISCOUNTS = ["프리뷰할", "조예할", "재관할", "마티네할", "청소년할", "타임세일", "나눔", "교환"];
 
 window.onload = async () => {
   await DB.init();
