@@ -1,164 +1,941 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>회전문 트래커</title>
-  <link rel="stylesheet" href="style.css">
-  <link rel="manifest" href="manifest.json">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>통합 관극 트래커</title>
+<style>
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap');
+
+:root {
+  /* 라이트 테마 기반으로 전면 수정 */
+  --bg: #F3F4F6;       /* 앱 전체 배경 (밝은 회색) */
+  --bg2: #FFFFFF;      /* 카드, 팝업 배경 (흰색) */
+  --bg3: #F8FAFC;      /* 인풋, 서브 배경 */
+  --bg4: #E2E8F0;      /* 비활성 탭, 구분선 */
+  --brd: #E2E8F0;      /* 테두리 1 */
+  --brd2: #CBD5E1;     /* 테두리 2 */
+  
+  --txt: #0F172A;      /* 메인 텍스트 (진한 검정) */
+  --txt2: #334155;     /* 서브 텍스트 */
+  --txt3: #64748B;     /* 라벨 텍스트 */
+  --txt4: #94A3B8;     /* 힌트/비활성 텍스트 */
+  
+  --point: #475569;    /* 기본 포인트 색상 (공연마다 덮어씌워짐) */
+  --tab-h: 60px;
+}
+
+* { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+body { background:var(--bg); color:var(--txt); font-family:'Pretendard', sans-serif; font-size:14px; overflow-x:hidden; }
+#app { padding-bottom: calc(var(--tab-h) + env(safe-area-inset-bottom, 0px)); }
+
+/* TAB BAR */
+.tab-bar { position:fixed; bottom:0; left:0; width:100%; height:calc(var(--tab-h) + env(safe-area-inset-bottom, 0px)); padding-bottom:env(safe-area-inset-bottom, 0px); background:var(--bg2); border-top:1px solid var(--brd); display:flex; z-index:100; }
+.tab-btn { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; background:none; border:none; cursor:pointer; color:var(--txt4); font-size:10px; transition:color 0.2s; font-weight: 600; }
+.tab-btn.active { color:var(--txt); }
+.tab-btn .icon { font-size:20px; filter: grayscale(100%) opacity(0.6); }
+.tab-btn.active .icon { filter: none; opacity: 1; }
+
+/* PAGES & COMMON */
+.page { display:none; padding:16px; animation: fadeIn 0.2s ease; }
+.page.active { display:block; }
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+.page-title { font-family:'IBM Plex Sans KR', sans-serif; font-size:22px; font-weight:700; color:var(--txt); margin-bottom:16px; }
+.card { background:var(--bg2); border:1px solid var(--brd); border-radius:12px; padding:16px; margin-bottom:16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+.card-title { font-size:14px; color:var(--txt); margin-bottom:12px; font-weight:700; }
+
+/* 오리지널 티켓 UI (가로형, 펀칭 구멍) */
+.ticket-origin {
+  display: flex; background: var(--bg2); border-radius: 12px; margin-bottom: 16px; position: relative;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid var(--brd);
+}
+.ticket-origin::before, .ticket-origin::after {
+  content: ''; position: absolute; top: 50%; width: 24px; height: 24px; background: var(--bg);
+  border-radius: 50%; transform: translateY(-50%); border: 1px solid var(--brd); z-index: 2;
+}
+.ticket-origin::before { left: -13px; border-right-color: transparent; }
+.ticket-origin::after { right: -13px; border-left-color: transparent; }
+
+.tk-img-part { width: 100px; border-right: 2px dashed var(--brd); position: relative; background-size: cover; background-position: center; border-radius: 12px 0 0 12px; background-color: var(--bg3); }
+.tk-info-part { flex: 1; padding: 16px 24px; position: relative; overflow: hidden; }
+.tk-dday { position: absolute; top: 12px; right: 20px; color: #fff; background: var(--txt); padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 800; }
+.tk-title { font-size: 16px; font-weight: 800; color: var(--txt); margin-bottom: 8px; width: 75%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tk-row { font-size: 12px; color: var(--txt2); margin-bottom: 4px; display: flex; gap: 8px; }
+.tk-label { font-weight: 700; color: var(--txt3); width: 40px; flex-shrink: 0; }
+.tk-edit-btn { position: absolute; bottom: 12px; right: 20px; font-size: 11px; color: var(--txt3); background: var(--bg3); border: 1px solid var(--brd); padding: 4px 10px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+
+/* BUTTONS */
+.btn { background:var(--bg2); border:1px solid var(--brd2); color:var(--txt); padding:8px 14px; cursor:pointer; font-family:inherit; font-size:13px; border-radius:8px; font-weight: 600; }
+.btn.prim { background:var(--txt); border-color:var(--txt); color:#fff; }
+.btn.sm { padding:6px 12px; font-size:12px; }
+.flex-between { display:flex; justify-content:space-between; align-items:center; }
+
+/* CALENDAR */
+.cal-nav { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+.cal-grid { display:grid; grid-template-columns:repeat(7, 1fr); gap:1px; background:var(--brd); border:1px solid var(--brd); border-radius:8px; overflow:hidden;}
+.cal-dow { text-align:center; font-size:11px; font-weight:700; color:var(--txt3); padding:8px 0; background:var(--bg3); }
+.cal-day { min-height:85px; background:var(--bg2); padding:4px; cursor:pointer; display:flex; flex-direction:column; align-items:flex-start; }
+.cal-day.today { background:#F0F9FF; }
+.cal-day.empty { background:var(--bg3); cursor:default; }
+.cal-day-num { font-size:12px; font-weight:700; color:var(--txt); margin-bottom:4px; padding-left:4px; }
+.cal-badge { color: #fff; font-size: 10px; font-weight: 700; padding: 3px 4px; border-radius: 4px; margin-bottom: 2px; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+
+/* FORMS & MODALS */
+.finput, .fselect { width:100%; background:var(--bg2); border:1px solid var(--brd2); color:var(--txt); padding:12px; font-family:inherit; font-size:14px; border-radius:8px; outline:none; transition: border 0.2s; }
+.finput:focus, .fselect:focus { border-color:var(--txt); }
+.fg { margin-bottom:16px; }
+.flbl { display:block; font-size:12px; color:var(--txt2); margin-bottom:6px; font-weight:700; }
+
+.overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:200; justify-content:center; align-items:flex-end; backdrop-filter: blur(2px); }
+.overlay.show { display:flex; }
+.modal { background:var(--bg2); width:100%; max-width:520px; max-height:90vh; overflow-y:auto; padding:24px 20px; border-radius:20px 20px 0 0; animation:slideUp 0.3s ease; box-shadow: 0 -5px 20px rgba(0,0,0,0.1); }
+@keyframes slideUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
+
+/* WALLET & STAMPS (포인트 컬러 연동) */
+.wallet-grid { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:16px; }
+.wcard { width:calc(50% - 5px); background:var(--bg2); border:1px solid var(--brd); border-radius:8px; text-align:center; display:flex; flex-direction:column; overflow:hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+.wcard-header { background:var(--bg3); padding:8px; font-size:12px; color:var(--txt); font-weight:700; border-bottom:1px solid var(--brd); }
+.wcard-body { display:flex; }
+.wcard-half { flex:1; padding:12px 0; }
+.wcard-half:first-child { border-right:1px solid var(--brd); }
+.wcard-val { font-size:20px; font-weight:700; font-family:'IBM Plex Sans KR'; color:var(--point); } /* 포인트 컬러 */
+
+.board-card { border:1px solid var(--brd); border-radius:8px; padding:14px; margin-bottom:12px; background:var(--bg2); }
+.board-head { display:flex; justify-content:space-between; font-size:12px; font-weight: 700; color:var(--txt); margin-bottom:10px; }
+.board-progress { width:100%; height:8px; background:var(--bg4); border-radius:4px; position:relative; margin-top:8px; }
+.board-fill { height:100%; background:var(--point); border-radius:4px; transition: width 0.3s; } /* 포인트 컬러 */
+</style>
 </head>
 <body>
-  <div class="app">
-    <div id="sc-home" class="sc on">
-      <div class="tbar"><h2>홈</h2></div>
-      <div class="stit">다가올 관람 일정</div>
-      <div id="home-ticket-list" style="padding: 0 20px;"></div>
-    </div>
 
-    <div id="sc-cal" class="sc">
-      <div class="tbar">
-        <div style="display:flex; align-items:center; gap:10px;">
-          <button class="cal-nav" onclick="changeMonth(-1)">‹</button>
-          <h2 id="cal-month-label" style="min-width: 80px; text-align:center;"></h2>
-          <button class="cal-nav" onclick="changeMonth(1)">›</button>
+<div id="app">
+  <div class="page active" id="page-home">
+    <div class="page-title">다가올 관람 일정</div>
+    <div id="home-ticket-list"></div>
+  </div>
+
+  <div class="page" id="page-calendar">
+    <div class="page-title">스케줄</div>
+    
+    <div class="card" style="padding:12px;">
+      <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+        <select class="fselect" id="filter-show" style="padding:8px;" onchange="updateActorFilter()"></select>
+        <select class="fselect" id="filter-actor" style="padding:8px;" onchange="renderCalendar()"></select>
+      </div>
+
+      <div class="cal-nav">
+        <button class="btn sm" onclick="changeMonth(-1)">‹ 이전</button>
+        <div id="cal-month-title" style="font-weight:700; font-size:18px;"></div>
+        <button class="btn sm" onclick="changeMonth(1)">다음 ›</button>
+      </div>
+      <div id="cal-grid-container"></div>
+    </div>
+  </div>
+
+  <div class="page" id="page-coupon">
+    <div class="flex-between" style="margin-bottom: 16px;">
+      <div class="page-title" style="margin:0;">공연 및 도장판</div>
+      <button class="btn prim sm" onclick="openShowModal()">+ 공연 추가</button>
+    </div>
+    
+    <div id="stamp-list-area"></div>
+
+    <div id="stamp-detail-area" style="display:none;">
+      <button class="btn sm" style="margin-bottom:16px;" onclick="closeStampDetail()">← 목록으로</button>
+      <div class="card" id="detail-point-card" style="border-top: 4px solid var(--point);">
+        <div class="flex-between" style="margin-bottom:12px;">
+          <h3 id="sd-title" style="font-size: 18px; font-weight: 800;">공연명</h3>
+          <button class="btn sm" onclick="editCurrentShow()">설정/수정</button>
         </div>
-        <button class="rbtn" onclick="openRecordModal()">+ 관람 등록</button>
+        <div style="font-weight:700; color:var(--point); margin-bottom:8px; font-size:13px;">🎁 설정된 도장판 혜택</div>
+        <div id="sd-rewards" style="font-size:13px; color:var(--txt2); line-height:1.6;"></div>
       </div>
-      <div style="padding: 10px 20px; display: flex; gap: 8px;">
-        <select class="inp" id="filter-show" style="margin-bottom:0; padding:8px;" onchange="updateActorFilter()"></select>
-        <select class="inp" id="filter-actor" style="margin-bottom:0; padding:8px;" onchange="loadCalendar()"></select>
-      </div>
-      <div class="cal-header">
-        <span style="color:#C0392B;">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span style="color:#2A5FA8;">토</span>
-      </div>
-      <div id="calendar-grid" class="cal-grid"></div>
-    </div>
 
-    <div id="sc-stamp" class="sc">
-      <div class="tbar">
-        <h2>도장판 & 혜택</h2>
-        <button class="rbtn" onclick="openShowModal()">+ 공연 추가</button>
+      <div class="card">
+        <div class="flex-between" style="margin-bottom:12px;">
+          <div class="card-title" style="margin:0;">지갑 현황</div>
+          <button class="btn sm prim" onclick="openWalletModal()">+ 수동 추가/차감</button>
+        </div>
+        <div class="wallet-grid" id="sd-wallet-grid"></div>
       </div>
-      <div id="stamp-list-area" style="padding: 20px;"></div>
-      <div id="stamp-detail-area" style="display:none; padding: 20px; background: #111520; min-height: 100%;"></div>
-    </div>
 
-    <div id="sc-settings" class="sc">
-      <div class="tbar"><h2>설정</h2></div>
-      <div style="padding: 20px;">
-        <button class="mbtn p" style="width:100%; margin-bottom:14px;" onclick="exportData()">⬇ 데이터 백업 (JSON)</button>
-        <button class="mbtn s" style="width:100%;" onclick="document.getElementById('import-file').click()">⬆ 데이터 복원</button>
-        <input type="file" id="import-file" style="display:none;" accept=".json" onchange="importData(event)">
+      <div class="card">
+        <div class="flex-between" style="margin-bottom:12px;">
+          <div class="card-title" style="margin:0;">도장판 현황</div>
+          <button class="btn sm" onclick="addNewBoardCurrentShow()">+ 도장판 추가</button>
+        </div>
+        <div id="sd-board-grid"></div>
       </div>
-    </div>
-
-    <div class="bnav">
-      <button class="ni on" onclick="navigate('home', this)"><div class="ni-ico">🎫</div><div class="ni-lbl">홈</div></button>
-      <button class="ni" onclick="navigate('cal', this)"><div class="ni-ico">📅</div><div class="ni-lbl">캘린더</div></button>
-      <button class="ni" onclick="navigate('stamp', this)"><div class="ni-ico">🎯</div><div class="ni-lbl">도장판</div></button>
-      <button class="ni" onclick="navigate('settings', this)"><div class="ni-ico">⚙️</div><div class="ni-lbl">설정</div></button>
     </div>
   </div>
 
-  <div class="ov" id="m-show">
-    <div class="modal">
-      <h3 id="show-modal-title">새 공연 추가</h3>
-      <input type="hidden" id="edit-show-id">
-      
-      <label class="lbl">공연명</label>
-      <input class="inp" type="text" id="add-show-name" placeholder="예: 시데레우스">
-
-      <label class="lbl">캘린더 표시 색상 (맞춤 설정)</label>
-      <div style="display: flex; gap: 10px; margin-bottom: 14px;">
-        <input type="color" id="add-show-color-picker" value="#7C5CBF" style="width: 50px; height: 44px; border: none; cursor: pointer; padding: 0; background: none;" oninput="document.getElementById('add-show-color-hex').value = this.value">
-        <input class="inp" type="text" id="add-show-color-hex" value="#7C5CBF" style="margin-bottom: 0;" oninput="document.getElementById('add-show-color-picker').value = this.value">
+  <div class="page" id="page-settings">
+    <div class="page-title">설정</div>
+    <div class="card">
+      <div class="card-title">데이터 백업 및 복원</div>
+      <div style="display:flex; gap:10px;">
+        <button class="btn prim" style="flex:1;" onclick="exportData()">JSON 백업</button>
+        <button class="btn" style="flex:1;" onclick="document.getElementById('import-file').click()">JSON 복원</button>
+        <input type="file" id="import-file" style="display:none" accept=".json" onchange="importData(event)">
       </div>
-
-      <label class="lbl">도장판 혜택 설정 (예: 5회 관람 시 40% 할인)</label>
-      <div id="reward-rows-container"></div>
-      <button class="mbtn s" style="width:100%; padding:10px; margin-bottom:14px; font-size:13px;" onclick="addRewardRow()">+ 혜택 구간 추가</button>
-
-      <div class="brow" id="show-action-btns"></div>
     </div>
   </div>
+</div>
 
-  <div class="ov" id="m-record">
-    <div class="modal">
-      <h3 id="record-modal-title">관람 등록</h3>
-      <input type="hidden" id="edit-record-id">
+<nav class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('home', this)"><span class="icon">🎫</span>홈</button>
+  <button class="tab-btn" onclick="switchTab('calendar', this)"><span class="icon">📅</span>스케줄</button>
+  <button class="tab-btn" onclick="switchTab('coupon', this)"><span class="icon">🎯</span>도장판</button>
+  <button class="tab-btn" onclick="switchTab('settings', this)"><span class="icon">⚙️</span>설정</button>
+</nav>
 
-      <label class="lbl">공연 선택</label>
-      <select class="inp" id="r-show" onchange="updateRecordFormDeps()"></select>
-      
+<div class="overlay" id="modal-show" onclick="if(event.target===this) closeModal('modal-show')">
+  <div class="modal">
+    <div class="page-title" id="sm-title" style="font-size:18px;">공연 추가</div>
+    <input type="hidden" id="sm-id">
+    
+    <div class="fg">
+      <label class="flbl">공연명</label>
+      <input type="text" id="sm-name" class="finput" placeholder="예: 시데레우스">
+    </div>
+
+    <div class="fg">
+      <label class="flbl">달력/포인트 색상 (수치 입력 가능)</label>
       <div style="display: flex; gap: 10px;">
-        <div style="flex:1;">
-          <label class="lbl">날짜</label>
-          <input class="inp" type="date" id="r-date">
-        </div>
-        <div style="flex:1;">
-          <label class="lbl">시간 (수기)</label>
-          <input class="inp" type="text" id="r-time" placeholder="예: 14:00">
-        </div>
-      </div>
-
-      <label class="lbl">캐스팅 (쉼표 구분)</label>
-      <input class="inp" type="text" id="r-cast" placeholder="예: 홍길동, 이순신">
-
-      <label class="lbl">도장판 선택</label>
-      <select class="inp" id="r-pad"></select>
-
-      <label class="lbl">할인권종 사용</label>
-      <select class="inp" id="r-discount"></select>
-
-      <label class="lbl">좌석 정보</label>
-      <input class="inp" type="text" id="r-seat" placeholder="예: 1층 B구역 12열 14번">
-
-      <label class="lbl">도장 적립 배율</label>
-      <div class="trow" id="r-multi">
-        <button class="tgl on" onclick="selectMulti(1, this)">1개</button>
-        <button class="tgl" onclick="selectMulti(2, this)">더블 x2</button>
-        <button class="tgl" onclick="selectMulti(3, this)">트리플 x3</button>
-      </div>
-
-      <label class="lbl">예매 내역서 첨부</label>
-      <input class="inp" type="file" id="r-image" accept="image/*">
-      <div id="r-image-preview" style="font-size: 12px; color: var(--purple); margin-bottom: 14px;"></div>
-
-      <label class="lbl">메모</label>
-      <input class="inp" type="text" id="r-memo" placeholder="특이사항">
-
-      <div class="brow" id="record-action-btns"></div>
-    </div>
-  </div>
-
-  <div class="ov" id="m-wallet">
-    <div class="modal">
-      <h3>지갑 수동 조작</h3>
-      <input type="hidden" id="w-show-id">
-      <label class="lbl">조작할 할인권/혜택</label>
-      <select class="inp" id="w-label"></select>
-      
-      <div style="display: flex; gap: 10px;">
-        <div style="flex:1;">
-          <label class="lbl">유형</label>
-          <select class="inp" id="w-type">
-            <option value="add">추가 지급 (+)</option>
-            <option value="sub">수동 사용 (-)</option>
-          </select>
-        </div>
-        <div style="flex:1;">
-          <label class="lbl">수량</label>
-          <input class="inp" type="number" id="w-amount" value="1" min="1">
-        </div>
-      </div>
-      <div class="brow">
-        <button class="mbtn s" onclick="closeModal('m-wallet')">취소</button>
-        <button class="mbtn p" onclick="saveWalletManual()">적용</button>
+        <input type="color" id="sm-color" value="#475569" style="width: 50px; height: 46px; border: none; background: none; cursor: pointer; padding: 0;" oninput="document.getElementById('sm-color-hex').value = this.value">
+        <input type="text" id="sm-color-hex" class="finput" value="#475569" style="margin: 0; text-transform: uppercase;" oninput="document.getElementById('sm-color').value = this.value">
       </div>
     </div>
-  </div>
 
-  <script src="db.js"></script>
-  <script src="app.js"></script>
+    <div class="fg">
+      <label class="flbl">도장판 혜택 설정 (예: 5회 관람 시 40% 할인권)</label>
+      <div id="sm-rewards-container"></div>
+      <button class="btn sm" style="width:100%; border:1px dashed var(--brd2); background:var(--bg3); margin-top: 12px; margin-bottom: 24px;" onclick="addRewardRow()">+ 혜택 구간 추가</button>
+    </div>
+
+    <div style="display:flex; gap:10px;" id="sm-btns"></div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-record" onclick="if(event.target===this) closeModal('modal-record')">
+  <div class="modal">
+    <div class="page-title" id="rm-title" style="font-size:18px;">관람 기록</div>
+    <input type="hidden" id="rm-id">
+
+    <div class="fg">
+      <label class="flbl">공연 선택</label>
+      <select id="rm-show" class="fselect" onchange="updateRecordDeps()"></select>
+    </div>
+    
+    <div style="display:flex; gap:10px;">
+      <div class="fg" style="flex:1;">
+        <label class="flbl">날짜</label>
+        <input type="date" id="rm-date" class="finput">
+      </div>
+      <div class="fg" style="width:100px;">
+        <label class="flbl">시간 (수기)</label>
+        <input type="text" id="rm-time" class="finput" placeholder="14:00">
+      </div>
+    </div>
+    
+    <div class="fg">
+      <label class="flbl">캐스팅 (쉼표 구분)</label>
+      <input type="text" id="rm-cast" class="finput" placeholder="홍길동, 이순신">
+    </div>
+
+    <div class="fg">
+      <label class="flbl">할인 권종</label>
+      <select id="rm-disc" class="fselect"></select>
+    </div>
+    
+    <div class="fg">
+      <label class="flbl">좌석 정보</label>
+      <input type="text" id="rm-seat" class="finput" placeholder="1층 B구역 12열 14번">
+    </div>
+
+    <div class="fg">
+      <label class="flbl">예매 내역서 / 티켓 첨부</label>
+      <input type="file" id="rm-receipt" accept="image/*" class="finput" style="padding:8px;" onchange="handleImageUpload(event)">
+      <div id="rm-receipt-preview" style="margin-top:8px; display:none; position:relative; width:max-content;">
+         <img id="rm-receipt-img" src="" style="max-height:120px; border-radius:6px; border:1px solid var(--brd2);">
+         <button type="button" onclick="clearReceipt()" style="position:absolute; top:-8px; right:-8px; background:#ef4444; color:#fff; border:none; border-radius:50%; width:22px; height:22px; font-size:11px; font-weight:bold; cursor:pointer;">X</button>
+      </div>
+    </div>
+
+    <div class="fg">
+      <label class="flbl">도장판 선택</label>
+      <select id="rm-board-select" class="fselect" style="margin-bottom: 8px;"></select>
+      <div style="display:flex; gap:6px;">
+        <input type="text" id="rm-new-board" class="finput" style="padding:8px; font-size:12px;" placeholder="새 도장판 이름 (선택)">
+        <button class="btn prim sm" onclick="addBoardFromRecordModal()" style="white-space:nowrap;">+판 생성</button>
+      </div>
+    </div>
+
+    <div class="fg">
+      <label class="flbl">도장 적립 배율</label>
+      <div style="display:flex; gap:8px;" id="rm-mult-group">
+        <button class="btn sm" id="mult-1" style="flex:1;" onclick="selectMult(1)">x1</button>
+        <button class="btn sm" id="mult-2" style="flex:1;" onclick="selectMult(2)">더블 x2</button>
+        <button class="btn sm" id="mult-3" style="flex:1;" onclick="selectMult(3)">트리플 x3</button>
+      </div>
+    </div>
+
+    <div class="fg">
+      <label class="flbl">메모</label>
+      <input type="text" id="rm-memo" class="finput" placeholder="특이사항">
+    </div>
+
+    <div style="display:flex; gap:10px; margin-top:24px;" id="rm-btns"></div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-wallet" onclick="if(event.target===this) closeModal('modal-wallet')">
+  <div class="modal">
+    <div class="page-title" style="font-size:18px;">할인권 조작</div>
+    <div class="fg">
+      <label class="flbl">항목 선택</label>
+      <select id="wm-label" class="fselect"></select>
+    </div>
+    <div style="display:flex; gap:10px;">
+      <div class="fg" style="flex:1;">
+        <label class="flbl">유형</label>
+        <select id="wm-type" class="fselect">
+          <option value="add">획득 (+)</option>
+          <option value="sub">사용/차감 (-)</option>
+        </select>
+      </div>
+      <div class="fg" style="flex:1;">
+        <label class="flbl">수량</label>
+        <input type="number" id="wm-amount" class="finput" value="1" min="1">
+      </div>
+    </div>
+    <div style="display:flex; gap:10px;">
+      <button class="btn" style="flex:1;" onclick="closeModal('modal-wallet')">취소</button>
+      <button class="btn prim" style="flex:1;" onclick="saveWalletManual()">적용</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==========================================
+// IndexedDB 셋업
+// ==========================================
+const DB_NAME = 'MultiTrackerDB';
+const DB_VERSION = 1;
+let db;
+
+const DB = {
+  init() {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
+      request.onupgradeneeded = (e) => {
+        db = e.target.result;
+        if (!db.objectStoreNames.contains('shows')) db.createObjectStore('shows', { keyPath: 'id' });
+        if (!db.objectStoreNames.contains('records')) db.createObjectStore('records', { keyPath: 'id' });
+      };
+      request.onsuccess = (e) => { db = e.target.result; resolve(); };
+      request.onerror = (e) => reject(e);
+    });
+  },
+  async getAll(storeName) {
+    return new Promise((resolve) => {
+      const request = db.transaction(storeName, 'readonly').objectStore(storeName).getAll();
+      request.onsuccess = () => resolve(request.result);
+    });
+  },
+  async put(storeName, item) {
+    return new Promise((resolve) => {
+      const request = db.transaction(storeName, 'readwrite').objectStore(storeName).put(item);
+      request.onsuccess = () => resolve();
+    });
+  },
+  async delete(storeName, id) {
+    return new Promise((resolve) => {
+      const request = db.transaction(storeName, 'readwrite').objectStore(storeName).delete(id);
+      request.onsuccess = () => resolve();
+    });
+  }
+};
+
+// ==========================================
+// 공통 변수 및 UI 로직
+// ==========================================
+let currentShowId = null;
+let currentMulti = 1;
+let currentReceiptBase64 = "";
+
+// 요청 4: 기본 할인 권종
+const DEFAULT_DISCOUNTS = ["프리뷰할", "조예할", "재관할", "청소년할", "타임세일", "나눔", "교환"];
+
+window.onload = async () => {
+  await DB.init();
+  switchTab('home', document.querySelector('.tab-btn'));
+  // 우측 하단 플로팅 추가 버튼 (달력 탭과 홈 탭에서 팝업 호출 위함)
+};
+
+function switchTab(tabId, btnEl) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + tabId).classList.add('active');
+  btnEl.classList.add('active');
+  
+  if(tabId === 'home') loadHome();
+  if(tabId === 'calendar') initCalendar();
+  if(tabId === 'coupon') loadStampTab();
+}
+
+function openModal(id) { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+// 이미지 압축 (캔버스 활용 - 참조 코드 로직)
+function handleImageUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(event) {
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      const MAX_WIDTH = 800; 
+      let width = img.width, height = img.height;
+      if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+      canvas.width = width; canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      currentReceiptBase64 = canvas.toDataURL('image/jpeg', 0.7); 
+      document.getElementById('rm-receipt-img').src = currentReceiptBase64;
+      document.getElementById('rm-receipt-preview').style.display = 'block';
+    }
+    img.src = event.target.result;
+  }
+  reader.readAsDataURL(file);
+}
+function clearReceipt() {
+  currentReceiptBase64 = "";
+  document.getElementById('rm-receipt').value = "";
+  document.getElementById('rm-receipt-preview').style.display = 'none';
+}
+
+// 날짜 유틸
+function todayStr() {
+  const offset = new Date().getTimezoneOffset() * 60000;
+  return new Date(Date.now() - offset).toISOString().split('T')[0];
+}
+
+// ==========================================
+// 1. 홈 탭 (다가올 티켓)
+// ==========================================
+async function loadHome() {
+  const records = await DB.getAll('records');
+  const shows = await DB.getAll('shows');
+  const showMap = shows.reduce((acc, s) => { acc[s.id] = s; return acc; }, {});
+  
+  const today = todayStr();
+  const upcoming = records.filter(r => r.date >= today).sort((a,b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
+  
+  const container = document.getElementById('home-ticket-list');
+  if(upcoming.length === 0) {
+    container.innerHTML = '<div style="text-align:center; padding:50px 0; color:var(--txt4);">다가올 일정이 없습니다.</div>';
+    return;
+  }
+
+  container.innerHTML = upcoming.map(r => {
+    const show = showMap[r.showId] || { name: '삭제된 공연', color: '#94A3B8' };
+    const dday = r.date === today ? 'TODAY' : 'D-' + Math.floor((new Date(r.date) - new Date(today)) / 86400000);
+    const imgStyle = r.image ? `background-image: url('${r.image}')` : ``;
+    const noImgText = r.image ? '' : '<span style="font-size:10px; color:var(--txt4);">no ticket</span>';
+
+    return `
+      <div class="ticket-origin">
+        <div class="tk-img-part" style="${imgStyle}; display:flex; align-items:center; justify-content:center;">${noImgText}</div>
+        <div class="tk-info-part">
+          <div class="tk-dday" style="background:${show.color};">${dday}</div>
+          <div class="tk-title" style="color:${show.color};">${show.name}</div>
+          <div class="tk-row"><span class="tk-label">일시</span> ${r.date} ${r.time}</div>
+          <div class="tk-row"><span class="tk-label">캐스팅</span> ${r.cast || '-'}</div>
+          <div class="tk-row"><span class="tk-label">좌석</span> ${r.seat || '-'}</div>
+          <button class="tk-edit-btn" onclick="openRecordModal('${r.id}')">수정/상세</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ==========================================
+// 2. 캘린더 탭
+// ==========================================
+let curYear = new Date().getFullYear();
+let curMonth = new Date().getMonth(); 
+
+async function initCalendar() {
+  const shows = await DB.getAll('shows');
+  document.getElementById('filter-show').innerHTML = `<option value="all">모든 공연</option>` + shows.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+  updateActorFilter();
+}
+
+async function updateActorFilter() {
+  const records = await DB.getAll('records');
+  const selectedShow = document.getElementById('filter-show').value;
+  let actors = new Set();
+  records.forEach(r => {
+    if ((selectedShow === 'all' || r.showId === selectedShow) && r.cast) r.cast.split(',').forEach(a => actors.add(a.trim()));
+  });
+  document.getElementById('filter-actor').innerHTML = `<option value="all">전체 배우</option>` + [...actors].map(a => `<option value="${a}">${a}</option>`).join('');
+  renderCalendar();
+}
+
+function changeMonth(diff) {
+  curMonth += diff;
+  if(curMonth > 11) { curMonth = 0; curYear++; }
+  if(curMonth < 0) { curMonth = 11; curYear--; }
+  renderCalendar();
+}
+
+async function renderCalendar() {
+  document.getElementById('cal-month-title').textContent = `${curYear}년 ${curMonth+1}월`;
+  const records = await DB.getAll('records');
+  const shows = await DB.getAll('shows');
+  
+  const selShow = document.getElementById('filter-show').value;
+  const selActor = document.getElementById('filter-actor').value;
+
+  const filtered = records.filter(r => {
+    const mShow = selShow === 'all' || r.showId === selShow;
+    const mActor = selActor === 'all' || (r.cast && r.cast.includes(selActor));
+    return mShow && mActor;
+  });
+
+  const firstDay = new Date(curYear, curMonth, 1).getDay();
+  const daysInMonth = new Date(curYear, curMonth+1, 0).getDate();
+  const today = todayStr();
+  
+  let html = '';
+  for(let i=0; i<firstDay; i++) html += `<div class="cal-day empty"></div>`;
+  
+  for(let d=1; d<=daysInMonth; d++) {
+    const dateStr = `${curYear}-${String(curMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dayRecords = filtered.filter(r => r.date === dateStr).sort((a,b)=>a.time.localeCompare(b.time));
+    
+    const badges = dayRecords.map(r => {
+      const show = shows.find(s => s.id === r.showId) || { name: '알수없음', color: '#94A3B8' };
+      return `<div class="cal-badge" style="background-color: ${show.color};">${r.time} ${show.name}</div>`;
+    }).join('');
+    
+    const isToday = dateStr === today ? 'today' : '';
+    html += `
+      <div class="cal-day ${isToday}" onclick="openRecordModal(null, '${dateStr}')">
+        <div class="cal-day-num">${d}</div>
+        <div style="width:100%;">${badges}</div>
+      </div>
+    `;
+  }
+  document.getElementById('cal-grid-container').innerHTML = `<div class="cal-grid">${html}</div>`;
+}
+
+// ==========================================
+// 3. 도장판 & 공연 설정
+// ==========================================
+function addRewardRow(n='', label='') {
+  const container = document.getElementById('sm-rewards-container');
+  const row = document.createElement('div');
+  row.className = 'flex-between';
+  row.style.marginBottom = '8px';
+  row.innerHTML = `
+    <input type="number" class="finput" style="width:70px; padding:8px;" placeholder="회차" value="${n}">
+    <input type="text" class="finput" style="flex:1; margin:0 8px; padding:8px;" placeholder="혜택 (예: 40% 할인)" value="${label}">
+    <button class="btn sm" style="background:var(--bg3);" onclick="this.parentElement.remove()">✕</button>
+  `;
+  container.appendChild(row);
+}
+
+async function openShowModal(editId = null) {
+  document.getElementById('sm-rewards-container').innerHTML = '';
+  const btnArea = document.getElementById('sm-btns');
+  
+  if (editId) {
+    document.getElementById('sm-title').textContent = '공연 설정/수정';
+    const show = (await DB.getAll('shows')).find(s => s.id === editId);
+    document.getElementById('sm-id').value = show.id;
+    document.getElementById('sm-name').value = show.name;
+    document.getElementById('sm-color').value = show.color;
+    document.getElementById('sm-color-hex').value = show.color;
+    (show.rewards || []).forEach(r => addRewardRow(r.n, r.label));
+    
+    btnArea.innerHTML = `
+      <button class="btn" style="flex:1; color:#ef4444; border-color:#ef4444;" onclick="deleteShow('${show.id}')">공연 삭제</button>
+      <button class="btn prim" style="flex:1;" onclick="saveShow()">저장</button>
+    `;
+  } else {
+    document.getElementById('sm-title').textContent = '새 공연 추가';
+    document.getElementById('sm-id').value = '';
+    document.getElementById('sm-name').value = '';
+    document.getElementById('sm-color').value = '#475569';
+    document.getElementById('sm-color-hex').value = '#475569';
+    addRewardRow(); // 기본으로 한 줄 열어줌
+    
+    btnArea.innerHTML = `
+      <button class="btn" style="flex:1;" onclick="closeModal('modal-show')">취소</button>
+      <button class="btn prim" style="flex:1;" onclick="saveShow()">추가하기</button>
+    `;
+  }
+  openModal('modal-show');
+}
+
+async function saveShow() {
+  const idInput = document.getElementById('sm-id').value;
+  const name = document.getElementById('sm-name').value.trim();
+  const color = document.getElementById('sm-color-hex').value;
+  if (!name) return alert('공연명을 입력해주세요.');
+
+  const rewards = [];
+  document.querySelectorAll('#sm-rewards-container > div').forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    if (inputs[0].value && inputs[1].value) rewards.push({ n: parseInt(inputs[0].value), label: inputs[1].value.trim() });
+  });
+
+  const shows = await DB.getAll('shows');
+  let existing = shows.find(s => s.id === idInput) || {};
+  
+  const showData = {
+    id: idInput || Date.now().toString(),
+    name, color, rewards,
+    boards: existing.boards || [{ id: 'b1', name: '판1' }],
+    walletLogs: existing.walletLogs || []
+  };
+
+  await DB.put('shows', showData);
+  closeModal('modal-show');
+  loadStampTab();
+  if (currentShowId === showData.id) renderStampDetail(showData.id); // 업데이트 시 새로고침
+}
+
+async function deleteShow(id) {
+  if(!confirm('공연과 관련된 모든 관람 기록이 삭제됩니다. 계속하시겠습니까?')) return;
+  const records = await DB.getAll('records');
+  for (let r of records) { if (r.showId === id) await DB.delete('records', r.id); }
+  await DB.delete('shows', id);
+  closeModal('modal-show');
+  closeStampDetail();
+  loadStampTab();
+}
+
+async function loadStampTab() {
+  const shows = await DB.getAll('shows');
+  const listArea = document.getElementById('stamp-list-area');
+  
+  if(shows.length === 0) {
+    listArea.innerHTML = '<div style="text-align:center; padding: 40px 0; color:var(--txt4);">등록된 공연이 없습니다.</div>';
+    return;
+  }
+
+  listArea.innerHTML = shows.map(s => `
+    <div class="card flex-between" style="cursor:pointer; border-left: 4px solid ${s.color}; margin-bottom:12px;" onclick="renderStampDetail('${s.id}')">
+      <div style="font-weight:800; font-size:16px;">${s.name}</div>
+      <div style="font-size:12px; color:var(--txt4);">상세 보기 〉</div>
+    </div>
+  `).join('');
+}
+
+// ------------------------------------------
+// 혜택 상세 페이지 렌더링
+// ------------------------------------------
+function closeStampDetail() {
+  currentShowId = null;
+  document.getElementById('stamp-detail-area').style.display = 'none';
+  document.getElementById('stamp-list-area').style.display = 'block';
+}
+
+function editCurrentShow() { openShowModal(currentShowId); }
+
+async function renderStampDetail(showId) {
+  currentShowId = showId;
+  const shows = await DB.getAll('shows');
+  const records = await DB.getAll('records');
+  const show = shows.find(s => s.id === showId);
+  const showRecords = records.filter(r => r.showId === showId);
+  
+  document.getElementById('stamp-list-area').style.display = 'none';
+  document.getElementById('stamp-detail-area').style.display = 'block';
+  
+  // 포인트 컬러 세팅
+  document.documentElement.style.setProperty('--point', show.color);
+  document.getElementById('sd-title').textContent = show.name;
+  
+  // 1. 혜택 리스트
+  const rewardsHtml = (show.rewards || []).map(r => `• ${r.n}회 관람 시 : ${r.label}`).join('<br>') || '설정된 도장판 혜택이 없습니다.';
+  document.getElementById('sd-rewards').innerHTML = rewardsHtml;
+
+  // 2. 지갑 계산 로직
+  // 요청 5: 기본적으로 '재관람 할인표' 항목 필수 삽입
+  const walletMap = { '재관람 할인표': { earned: showRecords.length, used: 0, manualAdd: 0, manualSub: 0 } };
+  
+  // 자동 획득 계산
+  const totalStamps = showRecords.reduce((sum, r) => sum + (Number(r.multi)||1), 0);
+  (show.rewards || []).forEach(r => {
+    walletMap[r.label] = { earned: Math.floor(totalStamps / r.n), used: 0, manualAdd: 0, manualSub: 0 };
+  });
+
+  // 사용 차감 계산
+  showRecords.forEach(r => {
+    if (r.usedDiscount && walletMap[r.usedDiscount]) walletMap[r.usedDiscount].used += 1;
+  });
+
+  // 수동 조작 합산
+  (show.walletLogs || []).forEach(log => {
+    if(!walletMap[log.label]) walletMap[log.label] = { earned:0, used:0, manualAdd:0, manualSub:0 };
+    if(log.type === 'add') walletMap[log.label].manualAdd += log.amount;
+    if(log.type === 'sub') walletMap[log.label].manualSub += log.amount;
+  });
+
+  document.getElementById('sd-wallet-grid').innerHTML = Object.keys(walletMap).map(label => {
+    const st = walletMap[label];
+    const curr = (st.earned + st.manualAdd) - (st.used + st.manualSub);
+    const fin = st.earned + st.manualAdd;
+    return `
+      <div class="wcard">
+        <div class="wcard-header">${label}</div>
+        <div class="wcard-body">
+          <div class="wcard-half">
+            <div style="font-size:10px; color:var(--txt3);">현재</div>
+            <div class="wcard-val">${curr}</div>
+          </div>
+          <div class="wcard-half">
+            <div style="font-size:10px; color:var(--txt4);">최종 누적</div>
+            <div style="font-size:20px; font-weight:700; color:var(--txt4); font-family:'IBM Plex Sans KR';">${fin}</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // 3. 도장판 렌더링
+  const maxReward = (show.rewards && show.rewards.length > 0) ? Math.max(...show.rewards.map(r=>r.n)) : 10;
+  
+  document.getElementById('sd-board-grid').innerHTML = show.boards.map(b => {
+    const bStamps = showRecords.filter(r => r.boardId === b.id).reduce((sum, r) => sum + (Number(r.multi)||1), 0);
+    const boardIdx = Math.floor(bStamps / maxReward) + 1;
+    const currStamps = bStamps % maxReward;
+    const remain = maxReward - currStamps;
+    const pct = (currStamps / maxReward) * 100;
+    
+    return `
+      <div class="board-card">
+        <div class="board-head">
+          <span>${b.name} (${boardIdx}판)</span>
+          <span style="color:var(--txt3); font-weight:400;">다음 혜택까지 ${remain}개</span>
+        </div>
+        <div class="board-progress"><div class="board-fill" style="width:${pct}%;"></div></div>
+        <div style="text-align:right; font-size:11px; margin-top:6px; color:var(--txt3);">현재 ${currStamps} / 누적 ${bStamps}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ==========================================
+// 지갑 수동 조작 
+// ==========================================
+async function openWalletModal() {
+  if(!currentShowId) return;
+  const show = (await DB.getAll('shows')).find(s => s.id === currentShowId);
+  const labels = ['재관람 할인표'].concat((show.rewards || []).map(r => r.label));
+  
+  document.getElementById('wm-label').innerHTML = labels.map(l => `<option value="${l}">${l}</option>`).join('');
+  document.getElementById('wm-amount').value = 1;
+  document.getElementById('wm-type').value = 'add';
+  openModal('modal-wallet');
+}
+
+async function saveWalletManual() {
+  const label = document.getElementById('wm-label').value;
+  const type = document.getElementById('wm-type').value;
+  const amount = parseInt(document.getElementById('wm-amount').value);
+
+  const show = (await DB.getAll('shows')).find(s => s.id === currentShowId);
+  if(!show.walletLogs) show.walletLogs = [];
+  show.walletLogs.push({ id: Date.now().toString(), label, type, amount });
+  
+  await DB.put('shows', show);
+  closeModal('modal-wallet');
+  renderStampDetail(currentShowId);
+}
+
+// ==========================================
+// 관람 등록 모달 (요청 7)
+// ==========================================
+async function openRecordModal(editId = null, defaultDate = null) {
+  const shows = await DB.getAll('shows');
+  if (shows.length === 0) return alert('먼저 도장판 탭에서 공연을 추가해주세요.');
+
+  document.getElementById('rm-show').innerHTML = shows.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+  
+  const btnArea = document.getElementById('rm-btns');
+
+  if (editId) {
+    document.getElementById('rm-title').textContent = '관람 기록 수정';
+    const r = (await DB.getAll('records')).find(x => x.id === editId);
+    
+    document.getElementById('rm-id').value = r.id;
+    document.getElementById('rm-show').value = r.showId;
+    document.getElementById('rm-date').value = r.date;
+    document.getElementById('rm-time').value = r.time || '';
+    document.getElementById('rm-cast').value = r.cast || '';
+    document.getElementById('rm-seat').value = r.seat || '';
+    document.getElementById('rm-memo').value = r.memo || '';
+    
+    if (r.image) {
+      currentReceiptBase64 = r.image;
+      document.getElementById('rm-receipt-img').src = currentReceiptBase64;
+      document.getElementById('rm-receipt-preview').style.display = 'block';
+    } else {
+      clearReceipt();
+    }
+    
+    selectMulti(r.multi || 1);
+    await updateRecordDeps(r.usedDiscount, r.boardId);
+    
+    btnArea.innerHTML = `
+      <button class="btn" style="flex:1; color:#ef4444; border-color:#ef4444;" onclick="deleteRecord('${r.id}')">기록 삭제</button>
+      <button class="btn prim" style="flex:1;" onclick="saveRecord()">수정 저장</button>
+    `;
+  } else {
+    document.getElementById('rm-title').textContent = '새 관람 등록';
+    document.getElementById('rm-id').value = '';
+    document.getElementById('rm-show').value = currentShowId || shows[0].id; // 현재 보고있는 공연 자동 세팅
+    document.getElementById('rm-date').value = defaultDate || todayStr();
+    document.getElementById('rm-time').value = '';
+    document.getElementById('rm-cast').value = '';
+    document.getElementById('rm-seat').value = '';
+    document.getElementById('rm-memo').value = '';
+    clearReceipt();
+    
+    selectMulti(1);
+    await updateRecordDeps();
+
+    btnArea.innerHTML = `
+      <button class="btn" style="flex:1;" onclick="closeModal('modal-record')">취소</button>
+      <button class="btn prim" style="flex:1;" onclick="saveRecord()">등록하기</button>
+    `;
+  }
+  openModal('modal-record');
+}
+
+// 공연이 바뀔 때 도장판과 할인권 목록 업데이트
+async function updateRecordDeps(selDisc = '', selBoard = '') {
+  const showId = document.getElementById('rm-show').value;
+  if(!showId) return;
+  const show = (await DB.getAll('shows')).find(s => s.id === showId);
+  
+  // 할인권 (요청 4: 기본 항목 + 사용자가 설정한 항목)
+  const customDisc = (show.rewards || []).map(r => r.label);
+  const allDiscs = [...new Set([...DEFAULT_DISCOUNTS, ...customDisc])];
+  const discSel = document.getElementById('rm-disc');
+  discSel.innerHTML = `<option value="">사용 안 함</option>` + allDiscs.map(d => `<option value="${d}">${d}</option>`).join('');
+  if (selDisc) discSel.value = selDisc;
+
+  // 도장판 선택 (요청 7: 판 선택)
+  const boardSel = document.getElementById('rm-board-select');
+  boardSel.innerHTML = (show.boards || [{id:'b1', name:'판1'}]).map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+  if (selBoard) boardSel.value = selBoard;
+}
+
+// 새 도장판 추가 (팝업 안에서)
+async function addBoardFromRecordModal() {
+  const newName = document.getElementById('rm-new-board').value.trim();
+  const showId = document.getElementById('rm-show').value;
+  const show = (await DB.getAll('shows')).find(s => s.id === showId);
+  
+  const boardName = newName || `판${show.boards.length + 1}`;
+  const newId = 'b' + Date.now();
+  show.boards.push({ id: newId, name: boardName });
+  await DB.put('shows', show);
+  
+  document.getElementById('rm-new-board').value = '';
+  await updateRecordDeps('', newId); // 새 보드 만들고 바로 선택
+}
+
+// 새 도장판 추가 (도장판 상세 화면에서) - 요청 6
+async function addNewBoardCurrentShow() {
+  if(!currentShowId) return;
+  const name = prompt("새 도장판 이름을 입력하세요:");
+  if(name === null) return;
+  
+  const show = (await DB.getAll('shows')).find(s => s.id === currentShowId);
+  show.boards.push({ id: 'b' + Date.now(), name: name.trim() || `판${show.boards.length + 1}` });
+  await DB.put('shows', show);
+  renderStampDetail(currentShowId);
+}
+
+function selectMulti(val) {
+  currentMulti = val;
+  [1, 2, 3].forEach(n => {
+    document.getElementById(`mult-${n}`).style.background = 'var(--bg2)';
+    document.getElementById(`mult-${n}`).style.color = 'var(--txt)';
+  });
+  document.getElementById(`mult-${val}`).style.background = 'var(--txt)';
+  document.getElementById(`mult-${val}`).style.color = '#fff';
+}
+
+async function saveRecord() {
+  const idInput = document.getElementById('rm-id').value;
+  const recordData = {
+    id: idInput || Date.now().toString(),
+    showId: document.getElementById('rm-show').value,
+    date: document.getElementById('rm-date').value,
+    time: document.getElementById('rm-time').value,
+    cast: document.getElementById('rm-cast').value,
+    usedDiscount: document.getElementById('rm-disc').value,
+    seat: document.getElementById('rm-seat').value,
+    boardId: document.getElementById('rm-board-select').value,
+    memo: document.getElementById('rm-memo').value,
+    multi: currentMulti,
+    image: currentReceiptBase64
+  };
+
+  await DB.put('records', recordData);
+  closeModal('modal-record');
+  
+  // 현재 보고 있는 화면에 맞춰 리로드
+  if (document.getElementById('page-calendar').classList.contains('active')) renderCalendar();
+  else if (document.getElementById('page-coupon').classList.contains('active')) {
+    if(currentShowId === recordData.showId) renderStampDetail(currentShowId);
+  } else loadHome();
+}
+
+async function deleteRecord(id) {
+  if(!confirm('이 기록을 삭제할까요? (차감/적립된 도장도 복구됩니다)')) return;
+  await DB.delete('records', id);
+  closeModal('modal-record');
+  if (document.getElementById('page-calendar').classList.contains('active')) renderCalendar();
+  else if (currentShowId) renderStampDetail(currentShowId);
+  else loadHome();
+}
+
+// ==========================================
+// 백업 및 복원
+// ==========================================
+async function exportData() {
+  const shows = await DB.getAll('shows');
+  const records = await DB.getAll('records');
+  const data = JSON.stringify({ shows, records });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([data], { type: 'application/json' }));
+  a.download = `tracker_backup.json`;
+  a.click();
+}
+async function importData(e) {
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = async (event) => {
+    try {
+      const data = JSON.parse(event.target.result);
+      if(data.shows) for(let s of data.shows) await DB.put('shows', s);
+      if(data.records) for(let r of data.records) await DB.put('records', r);
+      alert('복원 완료!'); location.reload();
+    } catch(err) { alert('오류 발생'); }
+  };
+  reader.readAsText(file);
+}
+</script>
 </body>
 </html>
