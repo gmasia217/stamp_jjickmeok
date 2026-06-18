@@ -57,7 +57,7 @@ body { background:var(--bg); color:var(--txt); font-family:'Pretendard', sans-se
 .tk-img-part { width: 100px; border-right: 2px dashed var(--brd); position: relative; background-size: cover; background-position: center; border-radius: 12px 0 0 12px; background-color: var(--bg3); cursor: pointer; }
 .tk-info-part { flex: 1; padding: 16px 24px; position: relative; overflow: hidden; }
 .tk-dday { position: absolute; top: 12px; right: 20px; color: #fff; background: var(--txt); padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 800; }
-.tk-title { font-size: 16px; font-weight: 800; color: var(--txt); margin-bottom: 8px; width: 75%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tk-title { font-size: 16px; font-weight: 800; margin-bottom: 8px; width: 75%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display:flex; align-items:center; }
 .tk-row { font-size: 12px; color: var(--txt2); margin-bottom: 4px; display: flex; gap: 8px; }
 .tk-label { font-weight: 700; color: var(--txt3); width: 40px; flex-shrink: 0; }
 .tk-edit-btn { position: absolute; bottom: 12px; right: 20px; font-size: 11px; color: var(--txt3); background: var(--bg3); border: 1px solid var(--brd); padding: 4px 10px; border-radius: 6px; cursor: pointer; font-weight: 600; }
@@ -70,16 +70,15 @@ body { background:var(--bg); color:var(--txt); font-family:'Pretendard', sans-se
 
 /* CALENDAR */
 .cal-nav { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
-/* 너비 고정을 위해 minmax(0, 1fr) 적용 */
 .cal-grid { display:grid; grid-template-columns:repeat(7, minmax(0, 1fr)); gap:1px; background:var(--brd); border:1px solid var(--brd); border-radius:8px; overflow:hidden;}
 .cal-dow { text-align:center; font-size:11px; font-weight:700; color:var(--txt3); padding:8px 0; background:var(--bg3); }
 .cal-day { min-height:85px; min-width:0; background:var(--bg2); padding:4px; cursor:pointer; display:flex; flex-direction:column; align-items:flex-start; }
 .cal-day.today { background:#F0F9FF; }
 .cal-day.empty { background:var(--bg3); cursor:default; }
 .cal-day-num { font-size:12px; font-weight:700; color:var(--txt); margin-bottom:4px; padding-left:4px; }
-/* 달력 셀 내부 텍스트 말줄임 및 구조 */
+/* 달력 뱃지 - 줄바꿈 허용으로 내용 다 보이게 처리 */
 .cal-badge { color: #fff; font-size: 10px; padding: 4px; border-radius: 4px; margin-bottom: 2px; width: 100%; text-align: left; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-.cal-badge > div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; }
+.cal-badge > div { white-space: normal; word-break: break-all; line-height: 1.2; }
 
 /* FORMS & MODALS */
 .finput, .fselect { width:100%; background:var(--bg2); border:1px solid var(--brd2); color:var(--txt); padding:12px; font-family:inherit; font-size:14px; border-radius:8px; outline:none; transition: border 0.2s; }
@@ -111,11 +110,13 @@ body { background:var(--bg); color:var(--txt); font-family:'Pretendard', sans-se
 <body>
 
 <div id="app">
+  <!-- 1. 홈 탭 -->
   <div class="page active" id="page-home">
     <div class="page-title">다가올 관람 일정</div>
     <div id="home-ticket-list"></div>
   </div>
 
+  <!-- 2. 캘린더 탭 -->
   <div class="page" id="page-calendar">
     <div class="flex-between" style="margin-bottom: 16px;">
       <div class="page-title" style="margin:0;">스케줄</div>
@@ -138,6 +139,7 @@ body { background:var(--bg); color:var(--txt); font-family:'Pretendard', sans-se
     </div>
   </div>
 
+  <!-- 3. 도장판 탭 -->
   <div class="page" id="page-coupon">
     <div class="flex-between" style="margin-bottom: 16px;">
       <div class="page-title" style="margin:0;">공연 및 도장판</div>
@@ -175,6 +177,7 @@ body { background:var(--bg); color:var(--txt); font-family:'Pretendard', sans-se
     </div>
   </div>
 
+  <!-- 4. 설정 탭 -->
   <div class="page" id="page-settings">
     <div class="page-title">설정</div>
     <div class="card">
@@ -195,6 +198,7 @@ body { background:var(--bg); color:var(--txt); font-family:'Pretendard', sans-se
   <button class="tab-btn" onclick="switchTab('settings', this)"><span class="icon">⚙️</span>설정</button>
 </nav>
 
+<!-- [모달] 이미지 크게 보기 -->
 <div class="overlay center" id="modal-image-viewer" onclick="if(event.target===this) closeModal('modal-image-viewer')">
   <div style="position:relative; max-width:90vw; max-height:90vh; display:flex; justify-content:center; align-items:center;">
     <button onclick="closeModal('modal-image-viewer')" style="position:absolute; top:-15px; right:-15px; background:var(--bg2); border:1px solid var(--brd2); color:var(--txt); width:32px; height:32px; border-radius:50%; cursor:pointer; font-weight:bold; box-shadow:0 2px 8px rgba(0,0,0,0.2);">✕</button>
@@ -202,6 +206,7 @@ body { background:var(--bg); color:var(--txt); font-family:'Pretendard', sans-se
   </div>
 </div>
 
+<!-- [모달 1] 공연 추가/수정 -->
 <div class="overlay" id="modal-show" onclick="if(event.target===this) closeModal('modal-show')">
   <div class="modal">
     <div class="page-title" id="sm-title" style="font-size:18px;">공연 추가</div>
@@ -230,6 +235,7 @@ body { background:var(--bg); color:var(--txt); font-family:'Pretendard', sans-se
   </div>
 </div>
 
+<!-- [모달 2] 관람 기록 추가/수정 -->
 <div class="overlay" id="modal-record" onclick="if(event.target===this) closeModal('modal-record')">
   <div class="modal">
     <div class="page-title" id="rm-title" style="font-size:18px;">관람 기록</div>
@@ -247,13 +253,13 @@ body { background:var(--bg); color:var(--txt); font-family:'Pretendard', sans-se
       </div>
       <div class="fg" style="width:100px;">
         <label class="flbl">시간</label>
-        <input type="text" id="rm-time" class="finput" placeholder="예: 14:00">
+        <input type="text" id="rm-time" class="finput">
       </div>
     </div>
     
     <div class="fg">
       <label class="flbl">캐스팅 (쉼표 구분)</label>
-      <input type="text" id="rm-cast" class="finput" placeholder="">
+      <input type="text" id="rm-cast" class="finput">
     </div>
 
     <div class="fg">
@@ -263,7 +269,7 @@ body { background:var(--bg); color:var(--txt); font-family:'Pretendard', sans-se
     
     <div class="fg">
       <label class="flbl">좌석 정보</label>
-      <input type="text" id="rm-seat" class="finput" placeholder="">
+      <input type="text" id="rm-seat" class="finput">
     </div>
 
     <div class="fg">
@@ -302,6 +308,7 @@ body { background:var(--bg); color:var(--txt); font-family:'Pretendard', sans-se
   </div>
 </div>
 
+<!-- [모달 3] 지갑 수동 추가/차감 -->
 <div class="overlay" id="modal-wallet" onclick="if(event.target===this) closeModal('modal-wallet')">
   <div class="modal">
     <div class="page-title" style="font-size:18px;">할인권 조작</div>
@@ -376,7 +383,6 @@ const DB = {
 let currentShowId = null;
 let currentMulti = 1;
 let currentReceiptBase64 = "";
-
 const DEFAULT_DISCOUNTS = ["프리뷰할", "조예할", "재관할", "청소년할", "타임세일", "나눔", "교환"];
 
 window.onload = async () => {
@@ -458,6 +464,12 @@ async function loadHome() {
   container.innerHTML = upcoming.map(r => {
     const show = showMap[r.showId] || { name: '삭제된 공연', color: '#94A3B8' };
     const dday = r.date === today ? 'TODAY' : 'D-' + Math.floor((new Date(r.date) - new Date(today)) / 86400000);
+    
+    // 미정 표 로직 (할인권 없음 + 좌석 비어있음)
+    const isUncertain = (!r.usedDiscount) && (!r.seat || r.seat.trim() === '');
+    const tkColor = isUncertain ? 'var(--txt4)' : show.color;
+    const uncertainBadge = isUncertain ? '<span style="background:var(--txt4); color:#fff; padding:2px 6px; border-radius:4px; font-size:10px; margin-left:8px;">미정</span>' : '';
+    
     const imgStyle = r.image ? `background-image: url('${r.image}')` : ``;
     const noImgText = r.image ? '' : '<span style="font-size:10px; color:var(--txt4);">no ticket</span>';
     const clickAction = r.image ? `onclick="openImageViewer('${r.image}')"` : '';
@@ -466,8 +478,8 @@ async function loadHome() {
       <div class="ticket-origin">
         <div class="tk-img-part" style="${imgStyle}; display:flex; align-items:center; justify-content:center;" ${clickAction}>${noImgText}</div>
         <div class="tk-info-part">
-          <div class="tk-dday" style="background:${show.color};">${dday}</div>
-          <div class="tk-title" style="color:${show.color};">${show.name}</div>
+          <div class="tk-dday" style="background:${tkColor};">${dday}</div>
+          <div class="tk-title" style="color:${tkColor};">${show.name} ${uncertainBadge}</div>
           <div class="tk-row"><span class="tk-label">일시</span> ${r.date} ${r.time}</div>
           <div class="tk-row"><span class="tk-label">캐스팅</span> ${r.cast || '-'}</div>
           <div class="tk-row"><span class="tk-label">좌석</span> ${r.seat || '-'}</div>
@@ -538,10 +550,13 @@ async function renderCalendar() {
     const dateStr = `${curYear}-${String(curMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const dayRecords = filtered.filter(r => r.date === dateStr).sort((a,b)=>a.time.localeCompare(b.time));
     
-    // 시간 / 이름 / 캐스팅 분리 출력
+    // 시간 / 이름 / 캐스팅 분리 및 미정 표 색상 처리
     const badges = dayRecords.map(r => {
       const show = shows.find(s => s.id === r.showId) || { name: '알수없음', color: '#94A3B8' };
-      return `<div class="cal-badge" style="background-color: ${show.color};">
+      const isUncertain = (!r.usedDiscount) && (!r.seat || r.seat.trim() === '');
+      const badgeBg = isUncertain ? 'var(--txt4)' : show.color;
+      
+      return `<div class="cal-badge" style="background-color: ${badgeBg};">
         <div style="font-size:9px; opacity:0.9;">${r.time}</div>
         <div style="font-weight:800; margin:2px 0;">${show.name}</div>
         <div style="font-size:9px; opacity:0.9;">${r.cast || ''}</div>
@@ -655,11 +670,11 @@ async function loadStampTab() {
     return;
   }
 
-  // 띠지 두께 늘리고 세로 폭 넓히기 (padding)
+  // 카드 상하 패딩 증가, 좌측 포인트 컬러 두께 증가
   listArea.innerHTML = shows.map(s => `
-    <div class="card flex-between" style="cursor:pointer; border-left: 8px solid ${s.color}; margin-bottom:12px; padding: 24px 16px;" onclick="renderStampDetail('${s.id}')">
-      <div style="font-weight:800; font-size:16px;">${s.name}</div>
-      <div style="font-size:12px; color:var(--txt4);">상세 보기 〉</div>
+    <div class="card flex-between" style="cursor:pointer; border-left: 12px solid ${s.color}; margin-bottom:12px; padding: 36px 20px;" onclick="renderStampDetail('${s.id}')">
+      <div style="font-weight:800; font-size:18px;">${s.name}</div>
+      <div style="font-size:13px; color:var(--txt4);">상세 보기 〉</div>
     </div>
   `).join('');
 }
