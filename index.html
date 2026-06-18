@@ -76,7 +76,6 @@ body { background:var(--bg); color:var(--txt); font-family:'Pretendard', sans-se
 .cal-day.today { background:#F0F9FF; }
 .cal-day.empty { background:var(--bg3); cursor:default; }
 .cal-day-num { font-size:12px; font-weight:700; color:var(--txt); margin-bottom:4px; padding-left:4px; }
-/* 달력 뱃지 - 줄바꿈 허용으로 내용 다 보이게 처리 */
 .cal-badge { color: #fff; font-size: 10px; padding: 4px; border-radius: 4px; margin-bottom: 2px; width: 100%; text-align: left; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
 .cal-badge > div { white-space: normal; word-break: break-all; line-height: 1.2; }
 
@@ -105,6 +104,9 @@ body { background:var(--bg); color:var(--txt); font-family:'Pretendard', sans-se
 .board-head { display:flex; justify-content:space-between; font-size:12px; font-weight: 700; color:var(--txt); margin-bottom:10px; }
 .board-progress { width:100%; height:8px; background:var(--bg4); border-radius:4px; position:relative; margin-top:8px; }
 .board-fill { height:100%; background:var(--point); border-radius:4px; transition: width 0.3s; }
+
+/* 공용 상세 레이어 */
+#layer-show-detail { display:none; position:fixed; inset:0; background:var(--bg); z-index:50; overflow-y:auto; padding:16px; padding-bottom:calc(var(--tab-h) + env(safe-area-inset-bottom, 0px) + 16px); animation: fadeIn 0.2s ease; }
 </style>
 </head>
 <body>
@@ -145,39 +147,17 @@ body { background:var(--bg); color:var(--txt); font-family:'Pretendard', sans-se
       <div class="page-title" style="margin:0;">공연 및 도장판</div>
       <button class="btn prim sm" onclick="openShowModal()">+ 공연 추가</button>
     </div>
-    
     <div id="stamp-list-area"></div>
-
-    <div id="stamp-detail-area" style="display:none;">
-      <button class="btn sm" style="margin-bottom:16px;" onclick="closeStampDetail()">← 목록으로</button>
-      <div class="card" id="detail-point-card" style="border-top: 4px solid var(--point);">
-        <div class="flex-between" style="margin-bottom:12px;">
-          <h3 id="sd-title" style="font-size: 18px; font-weight: 800;">공연명</h3>
-          <button class="btn sm" onclick="editCurrentShow()">설정/수정</button>
-        </div>
-        <div style="font-weight:700; color:var(--point); margin-bottom:8px; font-size:13px;">🎁 설정된 도장판 혜택</div>
-        <div id="sd-rewards" style="font-size:13px; color:var(--txt2); line-height:1.6;"></div>
-      </div>
-
-      <div class="card">
-        <div class="flex-between" style="margin-bottom:12px;">
-          <div class="card-title" style="margin:0;">지갑 현황</div>
-          <button class="btn sm prim" onclick="openWalletModal()">+ 수동 추가/차감</button>
-        </div>
-        <div class="wallet-grid" id="sd-wallet-grid"></div>
-      </div>
-
-      <div class="card">
-        <div class="flex-between" style="margin-bottom:12px;">
-          <div class="card-title" style="margin:0;">도장판 현황</div>
-          <button class="btn sm" onclick="addNewBoardCurrentShow()">+ 도장판 추가</button>
-        </div>
-        <div id="sd-board-grid"></div>
-      </div>
-    </div>
   </div>
 
-  <!-- 4. 설정 탭 -->
+  <!-- 4. 보관함 탭 -->
+  <div class="page" id="page-archive">
+    <div class="page-title">보관함</div>
+    <div style="font-size:12px; color:var(--txt4); margin-bottom:16px;">폐막했거나 보관 처리된 공연 목록입니다.</div>
+    <div id="archive-list-area"></div>
+  </div>
+
+  <!-- 5. 설정 탭 -->
   <div class="page" id="page-settings">
     <div class="page-title">설정</div>
     <div class="card">
@@ -191,10 +171,61 @@ body { background:var(--bg); color:var(--txt); font-family:'Pretendard', sans-se
   </div>
 </div>
 
+<!-- ============================================== -->
+<!-- 공유 상세 뷰 레이어 (도장판/보관함 공통 사용) -->
+<!-- ============================================== -->
+<div id="layer-show-detail">
+  <button class="btn sm" style="margin-bottom:16px;" onclick="closeShowDetail()">← 목록으로</button>
+  <div class="card" id="detail-point-card" style="border-top: 4px solid var(--point);">
+    <div class="flex-between" style="margin-bottom:12px;">
+      <h3 id="sd-title" style="font-size: 18px; font-weight: 800;">공연명</h3>
+      <button class="btn sm" onclick="editCurrentShow()">설정/수정</button>
+    </div>
+    <div style="font-weight:700; color:var(--point); margin-bottom:8px; font-size:13px;">🎁 설정된 도장판 혜택</div>
+    <div id="sd-rewards" style="font-size:13px; color:var(--txt2); line-height:1.6;"></div>
+  </div>
+
+  <div class="card">
+    <div class="flex-between" style="margin-bottom:12px;">
+      <div class="card-title" style="margin:0;">지갑 현황</div>
+      <button class="btn sm prim" onclick="openWalletModal()">+ 수동 추가/차감</button>
+    </div>
+    <div class="wallet-grid" id="sd-wallet-grid"></div>
+  </div>
+
+  <div class="card">
+    <div class="flex-between" style="margin-bottom:12px;">
+      <div class="card-title" style="margin:0;">도장판 현황</div>
+      <button class="btn sm" onclick="addNewBoardCurrentShow()">+ 도장판 추가</button>
+    </div>
+    <div id="sd-board-grid"></div>
+  </div>
+
+  <!-- 관극 회차 표 (새로 추가됨) -->
+  <div class="card">
+    <div class="card-title" style="margin-bottom:12px;">관극 회차</div>
+    <div style="overflow-x:auto; margin:0 -16px; padding:0 16px;">
+      <table style="width:100%; border-collapse:collapse; text-align:center; white-space:nowrap; font-size:12px;">
+        <thead>
+          <tr style="background:var(--bg3); color:var(--txt3);">
+            <th style="padding:8px; border-bottom:1px solid var(--brd); border-top:1px solid var(--brd);">날짜</th>
+            <th style="padding:8px; border-bottom:1px solid var(--brd); border-top:1px solid var(--brd);">시간</th>
+            <th style="padding:8px; border-bottom:1px solid var(--brd); border-top:1px solid var(--brd);">캐스트</th>
+            <th style="padding:8px; border-bottom:1px solid var(--brd); border-top:1px solid var(--brd);">좌석</th>
+            <th style="padding:8px; border-bottom:1px solid var(--brd); border-top:1px solid var(--brd);">할인권종</th>
+          </tr>
+        </thead>
+        <tbody id="sd-history-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 <nav class="tab-bar">
   <button class="tab-btn active" onclick="switchTab('home', this)"><span class="icon">🎫</span>홈</button>
   <button class="tab-btn" onclick="switchTab('calendar', this)"><span class="icon">📅</span>스케줄</button>
   <button class="tab-btn" onclick="switchTab('coupon', this)"><span class="icon">🎯</span>도장판</button>
+  <button class="tab-btn" onclick="switchTab('archive', this)"><span class="icon">📦</span>보관함</button>
   <button class="tab-btn" onclick="switchTab('settings', this)"><span class="icon">⚙️</span>설정</button>
 </nav>
 
@@ -231,7 +262,7 @@ body { background:var(--bg); color:var(--txt); font-family:'Pretendard', sans-se
       <button class="btn sm" style="width:100%; border:1px dashed var(--brd2); background:var(--bg3); margin-top: 12px; margin-bottom: 24px;" onclick="addRewardRow()">+ 혜택 구간 추가</button>
     </div>
 
-    <div style="display:flex; gap:10px;" id="sm-btns"></div>
+    <div id="sm-btns"></div>
   </div>
 </div>
 
@@ -391,6 +422,9 @@ window.onload = async () => {
 };
 
 function switchTab(tabId, btnEl) {
+  // 모달 레이어 닫기
+  document.getElementById('layer-show-detail').style.display = 'none';
+  
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('page-' + tabId).classList.add('active');
@@ -399,19 +433,18 @@ function switchTab(tabId, btnEl) {
   if(tabId === 'home') loadHome();
   if(tabId === 'calendar') initCalendar();
   if(tabId === 'coupon') loadStampTab();
+  if(tabId === 'archive') loadArchiveTab();
 }
 
 function openModal(id) { document.getElementById(id).classList.add('show'); }
 function closeModal(id) { document.getElementById(id).classList.remove('show'); }
 
-// 이미지 뷰어
 function openImageViewer(imgSrc) {
   if(!imgSrc) return;
   document.getElementById('viewer-img').src = imgSrc;
   openModal('modal-image-viewer');
 }
 
-// 이미지 압축
 function handleImageUpload(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -465,7 +498,6 @@ async function loadHome() {
     const show = showMap[r.showId] || { name: '삭제된 공연', color: '#94A3B8' };
     const dday = r.date === today ? 'TODAY' : 'D-' + Math.floor((new Date(r.date) - new Date(today)) / 86400000);
     
-    // 미정 표 로직 (할인권 없음 + 좌석 비어있음)
     const isUncertain = (!r.usedDiscount) && (!r.seat || r.seat.trim() === '');
     const tkColor = isUncertain ? 'var(--txt4)' : show.color;
     const uncertainBadge = isUncertain ? '<span style="background:var(--txt4); color:#fff; padding:2px 6px; border-radius:4px; font-size:10px; margin-left:8px;">미정</span>' : '';
@@ -491,14 +523,16 @@ async function loadHome() {
 }
 
 // ==========================================
-// 2. 캘린더 탭
+// 2. 캘린더 탭 (가나다순 정렬 적용)
 // ==========================================
 let curYear = new Date().getFullYear();
 let curMonth = new Date().getMonth(); 
 
 async function initCalendar() {
   const shows = await DB.getAll('shows');
-  document.getElementById('filter-show').innerHTML = `<option value="all">모든 공연</option>` + shows.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+  // 가나다순
+  const sortedShows = shows.sort((a,b) => a.name.localeCompare(b.name));
+  document.getElementById('filter-show').innerHTML = `<option value="all">모든 공연</option>` + sortedShows.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
   updateActorFilter();
 }
 
@@ -507,9 +541,13 @@ async function updateActorFilter() {
   const selectedShow = document.getElementById('filter-show').value;
   let actors = new Set();
   records.forEach(r => {
-    if ((selectedShow === 'all' || r.showId === selectedShow) && r.cast) r.cast.split(',').forEach(a => actors.add(a.trim()));
+    if ((selectedShow === 'all' || r.showId === selectedShow) && r.cast) {
+      r.cast.split(',').forEach(a => actors.add(a.trim()));
+    }
   });
-  document.getElementById('filter-actor').innerHTML = `<option value="all">전체 배우</option>` + [...actors].map(a => `<option value="${a}">${a}</option>`).join('');
+  // 가나다순
+  const sortedActors = [...actors].sort((a,b) => a.localeCompare(b));
+  document.getElementById('filter-actor').innerHTML = `<option value="all">전체 배우</option>` + sortedActors.map(a => `<option value="${a}">${a}</option>`).join('');
   renderCalendar();
 }
 
@@ -550,7 +588,6 @@ async function renderCalendar() {
     const dateStr = `${curYear}-${String(curMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const dayRecords = filtered.filter(r => r.date === dateStr).sort((a,b)=>a.time.localeCompare(b.time));
     
-    // 시간 / 이름 / 캐스팅 분리 및 미정 표 색상 처리
     const badges = dayRecords.map(r => {
       const show = shows.find(s => s.id === r.showId) || { name: '알수없음', color: '#94A3B8' };
       const isUncertain = (!r.usedDiscount) && (!r.seat || r.seat.trim() === '');
@@ -575,7 +612,7 @@ async function renderCalendar() {
 }
 
 // ==========================================
-// 3. 도장판 & 공연 설정
+// 3. 공연 설정 / 도장판 탭 / 보관함 탭
 // ==========================================
 function addRewardRow(n='', label='') {
   const container = document.getElementById('sm-rewards-container');
@@ -603,9 +640,13 @@ async function openShowModal(editId = null) {
     document.getElementById('sm-color-hex').value = show.color;
     (show.rewards || []).forEach(r => addRewardRow(r.n, r.label));
     
+    const archiveBtnText = show.isArchived ? '보관 해제' : '보관하기';
     btnArea.innerHTML = `
-      <button class="btn" style="flex:1; color:#ef4444; border-color:#ef4444;" onclick="deleteShow('${show.id}')">공연 삭제</button>
-      <button class="btn prim" style="flex:1;" onclick="saveShow()">저장</button>
+      <div style="display:flex; gap:10px; width:100%;">
+        <button class="btn" style="flex:1;" onclick="toggleArchiveShow('${show.id}')">${archiveBtnText}</button>
+        <button class="btn" style="flex:1; color:#ef4444; border-color:#ef4444;" onclick="deleteShow('${show.id}')">삭제</button>
+      </div>
+      <button class="btn prim" style="width:100%; margin-top:10px;" onclick="saveShow()">저장</button>
     `;
   } else {
     document.getElementById('sm-title').textContent = '새 공연 추가';
@@ -616,8 +657,10 @@ async function openShowModal(editId = null) {
     addRewardRow(); 
     
     btnArea.innerHTML = `
-      <button class="btn" style="flex:1;" onclick="closeModal('modal-show')">취소</button>
-      <button class="btn prim" style="flex:1;" onclick="saveShow()">추가하기</button>
+      <div style="display:flex; gap:10px; width:100%;">
+        <button class="btn" style="flex:1;" onclick="closeModal('modal-show')">취소</button>
+        <button class="btn prim" style="flex:1;" onclick="saveShow()">추가하기</button>
+      </div>
     `;
   }
   openModal('modal-show');
@@ -642,13 +685,27 @@ async function saveShow() {
     id: idInput || Date.now().toString(),
     name, color, rewards,
     boards: existing.boards || [{ id: 'b1', name: '도장판 1' }],
-    walletLogs: existing.walletLogs || []
+    walletLogs: existing.walletLogs || [],
+    isArchived: existing.isArchived || false
   };
 
   await DB.put('shows', showData);
   closeModal('modal-show');
+  
+  // 리프레시
   loadStampTab();
-  if (currentShowId === showData.id) renderStampDetail(showData.id);
+  loadArchiveTab();
+  if (currentShowId === showData.id) renderShowDetail(showData.id);
+}
+
+async function toggleArchiveShow(id) {
+  const show = (await DB.getAll('shows')).find(s => s.id === id);
+  show.isArchived = !show.isArchived;
+  await DB.put('shows', show);
+  closeModal('modal-show');
+  closeShowDetail();
+  loadStampTab();
+  loadArchiveTab();
 }
 
 async function deleteShow(id) {
@@ -657,22 +714,42 @@ async function deleteShow(id) {
   for (let r of records) { if (r.showId === id) await DB.delete('records', r.id); }
   await DB.delete('shows', id);
   closeModal('modal-show');
-  closeStampDetail();
+  closeShowDetail();
   loadStampTab();
+  loadArchiveTab();
 }
 
+// 가나다순으로 불러오기
 async function loadStampTab() {
   const shows = await DB.getAll('shows');
+  const activeShows = shows.filter(s => !s.isArchived).sort((a,b) => a.name.localeCompare(b.name));
   const listArea = document.getElementById('stamp-list-area');
   
-  if(shows.length === 0) {
+  if(activeShows.length === 0) {
     listArea.innerHTML = '<div style="text-align:center; padding: 40px 0; color:var(--txt4);">등록된 공연이 없습니다.</div>';
     return;
   }
 
-  // 카드 상하 패딩 증가, 좌측 포인트 컬러 두께 증가
-  listArea.innerHTML = shows.map(s => `
-    <div class="card flex-between" style="cursor:pointer; border-left: 12px solid ${s.color}; margin-bottom:12px; padding: 36px 20px;" onclick="renderStampDetail('${s.id}')">
+  listArea.innerHTML = activeShows.map(s => `
+    <div class="card flex-between" style="cursor:pointer; border-left: 12px solid ${s.color}; margin-bottom:12px; padding: 36px 20px;" onclick="renderShowDetail('${s.id}')">
+      <div style="font-weight:800; font-size:18px;">${s.name}</div>
+      <div style="font-size:13px; color:var(--txt4);">상세 보기 〉</div>
+    </div>
+  `).join('');
+}
+
+async function loadArchiveTab() {
+  const shows = await DB.getAll('shows');
+  const archivedShows = shows.filter(s => s.isArchived).sort((a,b) => a.name.localeCompare(b.name));
+  const listArea = document.getElementById('archive-list-area');
+  
+  if(archivedShows.length === 0) {
+    listArea.innerHTML = '<div style="text-align:center; padding: 40px 0; color:var(--txt4);">보관된 공연이 없습니다.</div>';
+    return;
+  }
+
+  listArea.innerHTML = archivedShows.map(s => `
+    <div class="card flex-between" style="cursor:pointer; border-left: 12px solid ${s.color}; margin-bottom:12px; padding: 36px 20px;" onclick="renderShowDetail('${s.id}')">
       <div style="font-weight:800; font-size:18px;">${s.name}</div>
       <div style="font-size:13px; color:var(--txt4);">상세 보기 〉</div>
     </div>
@@ -680,25 +757,24 @@ async function loadStampTab() {
 }
 
 // ------------------------------------------
-// 혜택 상세 페이지 렌더링
+// 혜택 상세 페이지 렌더링 (도장판 & 보관함 공용)
 // ------------------------------------------
-function closeStampDetail() {
+function closeShowDetail() {
   currentShowId = null;
-  document.getElementById('stamp-detail-area').style.display = 'none';
-  document.getElementById('stamp-list-area').style.display = 'block';
+  document.getElementById('layer-show-detail').style.display = 'none';
 }
 
 function editCurrentShow() { openShowModal(currentShowId); }
 
-async function renderStampDetail(showId) {
+async function renderShowDetail(showId) {
   currentShowId = showId;
   const shows = await DB.getAll('shows');
   const records = await DB.getAll('records');
   const show = shows.find(s => s.id === showId);
   const showRecords = records.filter(r => r.showId === showId);
   
-  document.getElementById('stamp-list-area').style.display = 'none';
-  document.getElementById('stamp-detail-area').style.display = 'block';
+  // 상세 레이어 표시
+  document.getElementById('layer-show-detail').style.display = 'block';
   
   document.documentElement.style.setProperty('--point', show.color);
   document.getElementById('sd-title').textContent = show.name;
@@ -707,7 +783,6 @@ async function renderStampDetail(showId) {
   document.getElementById('sd-rewards').innerHTML = rewardsHtml;
 
   const walletMap = { '재관람 할인표': { earned: showRecords.length, used: 0, manualAdd: 0, manualSub: 0 } };
-  
   const totalStamps = showRecords.reduce((sum, r) => sum + (Number(r.multi)||1), 0);
   (show.rewards || []).forEach(r => {
     walletMap[r.label] = { earned: Math.floor(totalStamps / r.n), used: 0, manualAdd: 0, manualSub: 0 };
@@ -764,6 +839,19 @@ async function renderStampDetail(showId) {
       </div>
     `;
   }).join('');
+
+  // 4. 관극 회차 표
+  const historyRows = showRecords.sort((a,b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time)).map(r => {
+    return `<tr>
+      <td style="padding:10px; border-bottom:1px solid var(--brd);">${r.date.substring(5).replace('-','.')}</td>
+      <td style="padding:10px; border-bottom:1px solid var(--brd);">${r.time}</td>
+      <td style="padding:10px; border-bottom:1px solid var(--brd); color:var(--point); font-weight:700;">${r.cast || '-'}</td>
+      <td style="padding:10px; border-bottom:1px solid var(--brd); font-size:11px;">${r.seat || '-'}</td>
+      <td style="padding:10px; border-bottom:1px solid var(--brd); font-size:11px; color:var(--txt3);">${r.usedDiscount || '-'}</td>
+    </tr>`;
+  }).join('');
+  
+  document.getElementById('sd-history-tbody').innerHTML = historyRows || `<tr><td colspan="5" style="padding:20px; color:var(--txt4);">기록이 없습니다.</td></tr>`;
 }
 
 // ==========================================
@@ -791,7 +879,7 @@ async function saveWalletManual() {
   
   await DB.put('shows', show);
   closeModal('modal-wallet');
-  renderStampDetail(currentShowId);
+  renderShowDetail(currentShowId);
 }
 
 // ==========================================
@@ -799,9 +887,12 @@ async function saveWalletManual() {
 // ==========================================
 async function openRecordModal(editId = null, defaultDate = null) {
   const shows = await DB.getAll('shows');
-  if (shows.length === 0) return alert('먼저 도장판 탭에서 공연을 추가해주세요.');
+  // 가나다순 & 보관함 제외 (단, 수정 시 해당 극이 보관 상태여도 표기)
+  const activeShows = shows.filter(s => !s.isArchived || (editId && s.id === (await DB.getAll('records')).find(x=>x.id===editId)?.showId)).sort((a,b) => a.name.localeCompare(b.name));
+  
+  if (activeShows.length === 0) return alert('먼저 도장판 탭에서 공연을 추가해주세요.');
 
-  document.getElementById('rm-show').innerHTML = shows.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+  document.getElementById('rm-show').innerHTML = activeShows.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
   
   const btnArea = document.getElementById('rm-btns');
 
@@ -835,7 +926,11 @@ async function openRecordModal(editId = null, defaultDate = null) {
   } else {
     document.getElementById('rm-title').textContent = '새 관람 등록';
     document.getElementById('rm-id').value = '';
-    document.getElementById('rm-show').value = currentShowId || shows[0].id; 
+    
+    // 현재 보고있는 공연이 보관 상태가 아니면 기본값으로
+    const currentIsActive = activeShows.some(s => s.id === currentShowId);
+    document.getElementById('rm-show').value = currentIsActive ? currentShowId : activeShows[0].id; 
+    
     document.getElementById('rm-date').value = defaultDate || todayStr();
     document.getElementById('rm-time').value = '';
     document.getElementById('rm-cast').value = '';
@@ -892,7 +987,7 @@ async function addNewBoardCurrentShow() {
   const show = (await DB.getAll('shows')).find(s => s.id === currentShowId);
   show.boards.push({ id: 'b' + Date.now(), name: name.trim() || `도장판 ${show.boards.length + 1}` });
   await DB.put('shows', show);
-  renderStampDetail(currentShowId);
+  renderShowDetail(currentShowId);
 }
 
 function selectMulti(val) {
@@ -925,9 +1020,8 @@ async function saveRecord() {
   closeModal('modal-record');
   
   if (document.getElementById('page-calendar').classList.contains('active')) renderCalendar();
-  else if (document.getElementById('page-coupon').classList.contains('active')) {
-    if(currentShowId === recordData.showId) renderStampDetail(currentShowId);
-  } else loadHome();
+  else if (document.getElementById('layer-show-detail').style.display === 'block') renderShowDetail(currentShowId);
+  else loadHome();
 }
 
 async function deleteRecord(id) {
@@ -935,7 +1029,7 @@ async function deleteRecord(id) {
   await DB.delete('records', id);
   closeModal('modal-record');
   if (document.getElementById('page-calendar').classList.contains('active')) renderCalendar();
-  else if (currentShowId) renderStampDetail(currentShowId);
+  else if (currentShowId) renderShowDetail(currentShowId);
   else loadHome();
 }
 
