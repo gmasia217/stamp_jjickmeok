@@ -1,6 +1,6 @@
 {
   "name": "회전문 트래커",
-  "short_name": "회전문",
+  "short_name": "관극 기록",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#F7F6FF",
