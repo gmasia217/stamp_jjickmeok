@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>관람 트래커</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+</head>
+<body>
+  <div class="app">
+    <div id="sc-home" class="sc on">
+      <div class="tbar"><h2>홈</h2></div>
+      <div id="home-ticket-list"></div>
+    </div>
+
+    <div id="sc-cal" class="sc">
+      <div class="tbar">
+        <h2>캘린더</h2>
+        <button class="rbtn" onclick="openRecordModal()">+ 관람 등록</button>
+      </div>
+      <div style="padding: 14px 20px; display: flex; gap: 10px;">
+        <select class="inp" id="filter-show" style="margin-bottom:0;" onchange="updateActorFilter()"></select>
+        <select class="inp" id="filter-actor" style="margin-bottom:0;"></select>
+      </div>
+      <div id="calendar-grid"></div>
+    </div>
+
+    <div id="sc-stamp" class="sc">
+      <div class="tbar">
+        <h2>도장판 & 혜택</h2>
+        <button class="rbtn" onclick="openModal('m-add-show')">+ 공연 추가</button>
+      </div>
+      <div id="stamp-list"></div>
+    </div>
+
+    <div id="sc-settings" class="sc">
+      <div class="tbar"><h2>설정</h2></div>
+      <div style="padding: 20px;">
+        <button class="mbtn s" style="width:100%; margin-bottom:10px;" onclick="exportData()">⬇ 데이터 백업 (JSON)</button>
+        <button class="mbtn s" style="width:100%;" onclick="document.getElementById('import-file').click()">⬆ 데이터 복원</button>
+        <input type="file" id="import-file" style="display:none;" accept=".json" onchange="importData(event)">
+      </div>
+    </div>
+
+    <div class="bnav">
+      <button class="ni on" onclick="navigate('home', this)"><div class="ni-ico">🎫</div><div class="ni-lbl">홈</div></button>
+      <button class="ni" onclick="navigate('cal', this)"><div class="ni-ico">📅</div><div class="ni-lbl">캘린더</div></button>
+      <button class="ni" onclick="navigate('stamp', this)"><div class="ni-ico">🎯</div><div class="ni-lbl">도장판</div></button>
+      <button class="ni" onclick="navigate('settings', this)"><div class="ni-ico">⚙️</div><div class="ni-lbl">설정</div></button>
+    </div>
+  </div>
+
+  <div class="ov" id="m-record">
+    <div class="modal">
+      <h3>새 관람 등록</h3>
+      <label class="lbl">공연 선택</label>
+      <select class="inp" id="r-show" onchange="updatePadAndDiscount()"></select>
+      
+      <div style="display: flex; gap: 10px;">
+        <div style="flex:1;">
+          <label class="lbl">날짜</label>
+          <input class="inp" type="date" id="r-date">
+        </div>
+        <div style="flex:1;">
+          <label class="lbl">시간 (수기)</label>
+          <input class="inp" type="text" id="r-time" placeholder="예: 14:00, 낮공">
+        </div>
+      </div>
+
+      <label class="lbl">캐스팅 (쉼표로 구분)</label>
+      <input class="inp" type="text" id="r-cast" placeholder="예: 홍길동, 이순신">
+
+      <label class="lbl">좌석 정보</label>
+      <input class="inp" type="text" id="r-seat" placeholder="예: 1층 B구역 12열 14번">
+
+      <label class="lbl">사용할 혜택/할인권</label>
+      <select class="inp" id="r-discount"></select>
+
+      <label class="lbl">도장판 선택</label>
+      <select class="inp" id="r-pad"></select>
+
+      <label class="lbl">도장 적립 배율</label>
+      <div class="trow" id="r-multi">
+        <button class="tgl on" onclick="selectMulti(1, this)">1개</button>
+        <button class="tgl" onclick="selectMulti(2, this)">더블 x2</button>
+        <button class="tgl" onclick="selectMulti(3, this)">트리플 x3</button>
+      </div>
+
+      <label class="lbl">예매 내역서 첨부</label>
+      <input class="inp" type="file" id="r-image" accept="image/*">
+
+      <label class="lbl">메모</label>
+      <input class="inp" type="text" id="r-memo" placeholder="특이사항">
+
+      <div class="brow">
+        <button class="mbtn s" onclick="closeModal('m-record')">취소</button>
+        <button class="mbtn p" onclick="saveRecord()">등록하기</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="db.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
