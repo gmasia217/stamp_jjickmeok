@@ -422,7 +422,6 @@ window.onload = async () => {
 };
 
 function switchTab(tabId, btnEl) {
-  // 모달 레이어 닫기
   document.getElementById('layer-show-detail').style.display = 'none';
   
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -523,14 +522,13 @@ async function loadHome() {
 }
 
 // ==========================================
-// 2. 캘린더 탭 (가나다순 정렬 적용)
+// 2. 캘린더 탭
 // ==========================================
 let curYear = new Date().getFullYear();
 let curMonth = new Date().getMonth(); 
 
 async function initCalendar() {
   const shows = await DB.getAll('shows');
-  // 가나다순
   const sortedShows = shows.sort((a,b) => a.name.localeCompare(b.name));
   document.getElementById('filter-show').innerHTML = `<option value="all">모든 공연</option>` + sortedShows.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
   updateActorFilter();
@@ -545,7 +543,6 @@ async function updateActorFilter() {
       r.cast.split(',').forEach(a => actors.add(a.trim()));
     }
   });
-  // 가나다순
   const sortedActors = [...actors].sort((a,b) => a.localeCompare(b));
   document.getElementById('filter-actor').innerHTML = `<option value="all">전체 배우</option>` + sortedActors.map(a => `<option value="${a}">${a}</option>`).join('');
   renderCalendar();
@@ -692,7 +689,6 @@ async function saveShow() {
   await DB.put('shows', showData);
   closeModal('modal-show');
   
-  // 리프레시
   loadStampTab();
   loadArchiveTab();
   if (currentShowId === showData.id) renderShowDetail(showData.id);
@@ -719,7 +715,6 @@ async function deleteShow(id) {
   loadArchiveTab();
 }
 
-// 가나다순으로 불러오기
 async function loadStampTab() {
   const shows = await DB.getAll('shows');
   const activeShows = shows.filter(s => !s.isArchived).sort((a,b) => a.name.localeCompare(b.name));
@@ -757,7 +752,7 @@ async function loadArchiveTab() {
 }
 
 // ------------------------------------------
-// 혜택 상세 페이지 렌더링 (도장판 & 보관함 공용)
+// 혜택 상세 페이지 렌더링
 // ------------------------------------------
 function closeShowDetail() {
   currentShowId = null;
@@ -773,7 +768,6 @@ async function renderShowDetail(showId) {
   const show = shows.find(s => s.id === showId);
   const showRecords = records.filter(r => r.showId === showId);
   
-  // 상세 레이어 표시
   document.getElementById('layer-show-detail').style.display = 'block';
   
   document.documentElement.style.setProperty('--point', show.color);
@@ -840,7 +834,6 @@ async function renderShowDetail(showId) {
     `;
   }).join('');
 
-  // 4. 관극 회차 표
   const historyRows = showRecords.sort((a,b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time)).map(r => {
     return `<tr>
       <td style="padding:10px; border-bottom:1px solid var(--brd);">${r.date.substring(5).replace('-','.')}</td>
@@ -883,12 +876,21 @@ async function saveWalletManual() {
 }
 
 // ==========================================
-// 관람 등록 모달
+// 관람 등록 모달 (Syntax 에러 완벽 해결)
 // ==========================================
 async function openRecordModal(editId = null, defaultDate = null) {
   const shows = await DB.getAll('shows');
-  // 가나다순 & 보관함 제외 (단, 수정 시 해당 극이 보관 상태여도 표기)
-  const activeShows = shows.filter(s => !s.isArchived || (editId && s.id === (await DB.getAll('records')).find(x=>x.id===editId)?.showId)).sort((a,b) => a.name.localeCompare(b.name));
+  
+  // 수정일 경우, 해당 기록이 속한 극의 ID를 먼저 찾아냅니다.
+  let editTargetShowId = null;
+  if (editId) {
+    const records = await DB.getAll('records');
+    const r = records.find(x => x.id === editId);
+    if (r) editTargetShowId = r.showId;
+  }
+
+  // 보관 처리되지 않았거나, 현재 수정하려는 그 극만 필터링합니다.
+  const activeShows = shows.filter(s => !s.isArchived || (editTargetShowId && s.id === editTargetShowId)).sort((a,b) => a.name.localeCompare(b.name));
   
   if (activeShows.length === 0) return alert('먼저 도장판 탭에서 공연을 추가해주세요.');
 
@@ -898,7 +900,8 @@ async function openRecordModal(editId = null, defaultDate = null) {
 
   if (editId) {
     document.getElementById('rm-title').textContent = '관람 기록 수정';
-    const r = (await DB.getAll('records')).find(x => x.id === editId);
+    const records = await DB.getAll('records');
+    const r = records.find(x => x.id === editId);
     
     document.getElementById('rm-id').value = r.id;
     document.getElementById('rm-show').value = r.showId;
@@ -927,7 +930,6 @@ async function openRecordModal(editId = null, defaultDate = null) {
     document.getElementById('rm-title').textContent = '새 관람 등록';
     document.getElementById('rm-id').value = '';
     
-    // 현재 보고있는 공연이 보관 상태가 아니면 기본값으로
     const currentIsActive = activeShows.some(s => s.id === currentShowId);
     document.getElementById('rm-show').value = currentIsActive ? currentShowId : activeShows[0].id; 
     
