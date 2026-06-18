@@ -4,14 +4,70 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>관람 트래커</title>
-  <link rel="stylesheet" href="style.css">
-  <link rel="manifest" href="manifest.json">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+
+    :root {
+      --navy: #2D2A6E; --purple: #7C5CBF; --bg: #F7F6FF; --sur: #fff;
+      --brd: #E8E6F5; --tx: #1A1A2E; --mu: #8888AA; --mu2: #BBBBCC;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg); font-family: 'Noto Sans KR', sans-serif; color: var(--tx); }
+
+    .app { width: 100%; height: 100vh; background: var(--sur); display: flex; flex-direction: column; overflow: hidden; }
+    .sc { display: none; flex-direction: column; flex: 1; overflow-y: auto; padding-bottom: 72px; }
+    .sc.on { display: flex; }
+
+    .tbar { position: sticky; top: 0; background: var(--sur); border-bottom: 1px solid var(--brd); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; z-index: 10; }
+    .tbar h2 { font-size: 18px; font-weight: 700; color: var(--navy); }
+    .rbtn { background: var(--navy); color: #fff; border: none; border-radius: 20px; padding: 7px 16px; font-size: 13px; font-weight: 700; cursor: pointer; }
+
+    /* 티켓 UI */
+    .ticket-card { margin: 16px 20px; background: var(--sur); border-radius: 12px; filter: drop-shadow(0 4px 12px rgba(45,42,110,0.08)); display: flex; flex-direction: column; position: relative; overflow: hidden; border: 1px solid var(--brd); }
+    .ticket-img-area { width: 100%; height: 160px; background-color: var(--brd); background-size: cover; background-position: center; position: relative; display: flex; align-items: center; justify-content: center; color: var(--mu); font-size: 12px; }
+    .ticket-info { padding: 20px; position: relative; border-top: 2px dashed var(--brd); }
+    .ticket-info::before, .ticket-info::after { content: ''; position: absolute; top: -10px; width: 20px; height: 20px; background: var(--sur); border-radius: 50%; border-bottom: 1px solid var(--brd); }
+    .ticket-info::before { left: -10px; border-right: 1px solid var(--brd); transform: rotate(-45deg); }
+    .ticket-info::after { right: -10px; border-left: 1px solid var(--brd); transform: rotate(45deg); }
+    .tk-dday { position: absolute; top: 12px; right: 12px; background: var(--purple); color: #fff; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; z-index: 2; }
+    .tk-title { font-size: 18px; font-weight: 800; color: var(--navy); margin-bottom: 8px; }
+    .tk-row { font-size: 13px; color: var(--mu); margin-bottom: 4px; display: flex; gap: 8px; }
+    .tk-label { font-weight: 700; color: var(--tx); width: 45px; flex-shrink: 0; }
+
+    /* 네비게이션 */
+    .bnav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--sur); border-top: 1px solid var(--brd); display: flex; z-index: 100; padding-bottom: env(safe-area-inset-bottom); }
+    .ni { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 0 12px; border: none; background: none; color: var(--mu2); cursor: pointer; }
+    .ni.on { color: var(--navy); }
+    .ni-ico { font-size: 22px; margin-bottom: 3px; }
+    .ni-lbl { font-size: 10px; font-weight: 500; }
+
+    /* 모달 */
+    .ov { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 200; align-items: flex-end; justify-content: center; }
+    .ov.open { display: flex; }
+    .modal { background: var(--sur); border-radius: 24px 24px 0 0; width: 100%; padding: 24px 20px calc(40px + env(safe-area-inset-bottom)); max-height: 92vh; overflow-y: auto; }
+    .modal h3 { font-size: 18px; font-weight: 700; color: var(--navy); margin-bottom: 20px; }
+    .lbl { font-size: 12px; font-weight: 700; color: var(--mu); display: block; margin-bottom: 6px; }
+    .inp { width: 100%; padding: 12px 14px; border: 1.5px solid var(--brd); border-radius: 10px; font-size: 14px; margin-bottom: 14px; outline: none; background: var(--sur); color: var(--tx); font-family: inherit; }
+    .inp:focus { border-color: var(--purple); }
+    .brow { display: flex; gap: 10px; margin-top: 10px; }
+    .mbtn { flex: 1; padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; font-family: inherit; }
+    .mbtn.p { background: var(--navy); color: #fff; }
+    .mbtn.s { background: var(--bg); color: var(--mu); }
+    .trow { display: flex; gap: 8px; margin-bottom: 14px; }
+    .tgl { flex: 1; padding: 10px; border-radius: 10px; border: 1.5px solid var(--brd); background: var(--sur); font-size: 13px; font-weight: 600; cursor: pointer; color: var(--mu); }
+    .tgl.on { background: var(--navy); border-color: var(--navy); color: #fff; }
+  </style>
 </head>
 <body>
   <div class="app">
     <div id="sc-home" class="sc on">
       <div class="tbar"><h2>홈</h2></div>
-      <div id="home-ticket-list"></div>
+      <div id="home-ticket-list">
+        <div style="text-align:center; padding:50px 20px; color:var(--mu); font-size:14px;">
+          데이터가 없습니다.<br>도장판 탭에서 공연을 추가하고 관람을 등록해보세요!
+        </div>
+      </div>
     </div>
 
     <div id="sc-cal" class="sc">
@@ -19,11 +75,9 @@
         <h2>캘린더</h2>
         <button class="rbtn" onclick="openRecordModal()">+ 관람 등록</button>
       </div>
-      <div style="padding: 14px 20px; display: flex; gap: 10px;">
-        <select class="inp" id="filter-show" style="margin-bottom:0;" onchange="updateActorFilter()"></select>
-        <select class="inp" id="filter-actor" style="margin-bottom:0;"></select>
+      <div style="padding: 20px; color: var(--mu); text-align: center; font-size: 14px;">
+        (캘린더 UI 렌더링 영역 - 추후 구현)
       </div>
-      <div id="calendar-grid"></div>
     </div>
 
     <div id="sc-stamp" class="sc">
@@ -31,31 +85,34 @@
         <h2>도장판 & 혜택</h2>
         <button class="rbtn" onclick="openModal('m-add-show')">+ 공연 추가</button>
       </div>
-      <div id="stamp-list"></div>
-    </div>
-
-    <div id="sc-settings" class="sc">
-      <div class="tbar"><h2>설정</h2></div>
-      <div style="padding: 20px;">
-        <button class="mbtn s" style="width:100%; margin-bottom:10px;" onclick="exportData()">⬇ 데이터 백업 (JSON)</button>
-        <button class="mbtn s" style="width:100%;" onclick="document.getElementById('import-file').click()">⬆ 데이터 복원</button>
-        <input type="file" id="import-file" style="display:none;" accept=".json" onchange="importData(event)">
-      </div>
+      <div id="stamp-list" style="padding: 20px;"></div>
     </div>
 
     <div class="bnav">
       <button class="ni on" onclick="navigate('home', this)"><div class="ni-ico">🎫</div><div class="ni-lbl">홈</div></button>
       <button class="ni" onclick="navigate('cal', this)"><div class="ni-ico">📅</div><div class="ni-lbl">캘린더</div></button>
       <button class="ni" onclick="navigate('stamp', this)"><div class="ni-ico">🎯</div><div class="ni-lbl">도장판</div></button>
-      <button class="ni" onclick="navigate('settings', this)"><div class="ni-ico">⚙️</div><div class="ni-lbl">설정</div></button>
+    </div>
+  </div>
+
+  <div class="ov" id="m-add-show">
+    <div class="modal">
+      <h3>새 공연 추가</h3>
+      <label class="lbl">공연명</label>
+      <input class="inp" type="text" id="add-show-name" placeholder="예: 시데레우스">
+      <div class="brow">
+        <button class="mbtn s" onclick="closeModal('m-add-show')">취소</button>
+        <button class="mbtn p" onclick="saveShow()">추가하기</button>
+      </div>
     </div>
   </div>
 
   <div class="ov" id="m-record">
     <div class="modal">
       <h3>새 관람 등록</h3>
+      
       <label class="lbl">공연 선택</label>
-      <select class="inp" id="r-show" onchange="updatePadAndDiscount()"></select>
+      <select class="inp" id="r-show"></select>
       
       <div style="display: flex; gap: 10px;">
         <div style="flex:1;">
@@ -74,12 +131,6 @@
       <label class="lbl">좌석 정보</label>
       <input class="inp" type="text" id="r-seat" placeholder="예: 1층 B구역 12열 14번">
 
-      <label class="lbl">사용할 혜택/할인권</label>
-      <select class="inp" id="r-discount"></select>
-
-      <label class="lbl">도장판 선택</label>
-      <select class="inp" id="r-pad"></select>
-
       <label class="lbl">도장 적립 배율</label>
       <div class="trow" id="r-multi">
         <button class="tgl on" onclick="selectMulti(1, this)">1개</button>
@@ -90,9 +141,6 @@
       <label class="lbl">예매 내역서 첨부</label>
       <input class="inp" type="file" id="r-image" accept="image/*">
 
-      <label class="lbl">메모</label>
-      <input class="inp" type="text" id="r-memo" placeholder="특이사항">
-
       <div class="brow">
         <button class="mbtn s" onclick="closeModal('m-record')">취소</button>
         <button class="mbtn p" onclick="saveRecord()">등록하기</button>
@@ -100,7 +148,195 @@
     </div>
   </div>
 
-  <script src="db.js"></script>
-  <script src="app.js"></script>
+  <script>
+    // ----------------------------------------------------
+    // 1. 데이터베이스 (IndexedDB) 로직
+    // ----------------------------------------------------
+    const DB_NAME = 'TicketTrackerDB';
+    const DB_VERSION = 1;
+    let dbInstance;
+
+    const DB = {
+      init() {
+        return new Promise((resolve, reject) => {
+          const request = indexedDB.open(DB_NAME, DB_VERSION);
+          request.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains('shows')) {
+              db.createObjectStore('shows', { keyPath: 'id' });
+            }
+            if (!db.objectStoreNames.contains('records')) {
+              const recordStore = db.createObjectStore('records', { keyPath: 'id' });
+              recordStore.createIndex('showId', 'showId', { unique: false });
+            }
+          };
+          request.onsuccess = (e) => {
+            dbInstance = e.target.result;
+            resolve();
+          };
+          request.onerror = (e) => reject(e);
+        });
+      },
+      async getAll(storeName) {
+        return new Promise((resolve, reject) => {
+          const tx = dbInstance.transaction(storeName, 'readonly');
+          const store = tx.objectStore(storeName);
+          const request = store.getAll();
+          request.onsuccess = () => resolve(request.result);
+          request.onerror = () => reject(request.error);
+        });
+      },
+      async put(storeName, item) {
+        return new Promise((resolve, reject) => {
+          const tx = dbInstance.transaction(storeName, 'readwrite');
+          const store = tx.objectStore(storeName);
+          const request = store.put(item);
+          request.onsuccess = () => resolve();
+          request.onerror = () => reject(request.error);
+        });
+      }
+    };
+
+    // ----------------------------------------------------
+    // 2. UI 제어 & 앱 로직
+    // ----------------------------------------------------
+    let currentMulti = 1;
+
+    window.onload = async () => {
+      await DB.init();
+      loadHome();
+      loadShowsToStampTab();
+    };
+
+    // 탭 이동
+    function navigate(tab, btn) {
+      document.querySelectorAll('.ni').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+      document.querySelectorAll('.sc').forEach(s => s.classList.remove('on'));
+      document.getElementById('sc-' + tab).classList.add('on');
+      
+      if (tab === 'home') loadHome();
+      if (tab === 'stamp') loadShowsToStampTab();
+    }
+
+    // 모달 열기/닫기
+    function openModal(id) { document.getElementById(id).classList.add('open'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+    document.querySelectorAll('.ov').forEach(o => {
+      o.addEventListener('click', e => { if (e.target === o) closeModal(o.id); });
+    });
+
+    // 배율 선택 UI
+    function selectMulti(val, btn) {
+      currentMulti = val;
+      document.querySelectorAll('#r-multi .tgl').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+    }
+
+    // [기능] 새로운 공연 추가
+    async function saveShow() {
+      const name = document.getElementById('add-show-name').value.trim();
+      if (!name) return alert('공연명을 입력해주세요!');
+      
+      await DB.put('shows', { id: Date.now().toString(), name: name });
+      closeModal('m-add-show');
+      document.getElementById('add-show-name').value = '';
+      
+      loadShowsToStampTab();
+      alert('공연이 추가되었습니다!');
+    }
+
+    // 도장판 탭에 추가된 공연 리스트 뿌리기
+    async function loadShowsToStampTab() {
+      const shows = await DB.getAll('shows');
+      const container = document.getElementById('stamp-list');
+      
+      if(shows.length === 0) {
+        container.innerHTML = '<div style="text-align:center; color:var(--mu); font-size:13px;">등록된 공연이 없습니다.</div>';
+        return;
+      }
+
+      container.innerHTML = shows.map(s => `
+        <div style="background:#fff; border:1px solid var(--brd); padding:16px; border-radius:12px; margin-bottom:10px; font-weight:700; color:var(--navy);">
+          🎭 ${s.name}
+        </div>
+      `).join('');
+    }
+
+    // [기능] 관람 등록 모달 열기
+    async function openRecordModal() {
+      const shows = await DB.getAll('shows');
+      if (shows.length === 0) {
+        alert('먼저 도장판 탭에서 공연을 하나 이상 추가해주세요!');
+        return;
+      }
+
+      const showSelect = document.getElementById('r-show');
+      showSelect.innerHTML = shows.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+      
+      document.getElementById('r-date').value = new Date().toISOString().split('T')[0];
+      document.getElementById('r-image').value = '';
+      openModal('m-record');
+    }
+
+    // [기능] 관람 기록 저장
+    async function saveRecord() {
+      const fileInput = document.getElementById('r-image');
+      let imageBlob = null;
+      if (fileInput.files.length > 0) imageBlob = fileInput.files[0];
+
+      const record = {
+        id: Date.now().toString(),
+        showId: document.getElementById('r-show').value,
+        date: document.getElementById('r-date').value,
+        time: document.getElementById('r-time').value,
+        cast: document.getElementById('r-cast').value,
+        seat: document.getElementById('r-seat').value,
+        multi: currentMulti,
+        image: imageBlob
+      };
+
+      await DB.put('records', record);
+      closeModal('m-record');
+      loadHome();
+    }
+
+    // [기능] 홈 화면 (오리지널 티켓 렌더링)
+    async function loadHome() {
+      const records = await DB.getAll('records');
+      const shows = await DB.getAll('shows');
+      const showMap = shows.reduce((acc, s) => { acc[s.id] = s.name; return acc; }, {});
+      
+      const container = document.getElementById('home-ticket-list');
+      
+      if(records.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding:50px 20px; color:var(--mu); font-size:14px;">등록된 관람 내역이 없습니다.</div>';
+        return;
+      }
+
+      // 날짜순 정렬 (최신이 위로 오게)
+      records.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      container.innerHTML = records.map(r => {
+        // 이미지가 있으면 브라우저 메모리에 올려서 임시 URL 생성
+        const imgUrl = r.image ? URL.createObjectURL(r.image) : '';
+        const imgStyle = imgUrl ? `background-image: url('${imgUrl}');` : `background-color: var(--pl);`;
+        const noImgText = imgUrl ? '' : '첨부된 내역서 없음';
+
+        return `
+          <div class="ticket-card">
+            <div class="tk-dday">${r.date}</div>
+            <div class="ticket-img-area" style="${imgStyle}">${noImgText}</div>
+            <div class="ticket-info">
+              <div class="tk-title">${showMap[r.showId] || '삭제된 공연'}</div>
+              <div class="tk-row"><span class="tk-label">일시</span> ${r.date} ${r.time}</div>
+              <div class="tk-row"><span class="tk-label">캐스팅</span> ${r.cast || '-'}</div>
+              <div class="tk-row"><span class="tk-label">좌석</span> ${r.seat || '-'}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  </script>
 </body>
 </html>
