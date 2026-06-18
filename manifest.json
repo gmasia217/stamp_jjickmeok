@@ -1,0 +1,15 @@
+{
+  "name": "회전문 트래커",
+  "short_name": "회전문",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#F7F6FF",
+  "theme_color": "#2D2A6E",
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}
