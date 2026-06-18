@@ -112,13 +112,11 @@ body { background:var(--bg); color:var(--txt); font-family:'Pretendard', sans-se
 <body>
 
 <div id="app">
-  <!-- 1. 홈 탭 -->
   <div class="page active" id="page-home">
     <div class="page-title">다가올 관람 일정</div>
     <div id="home-ticket-list"></div>
   </div>
 
-  <!-- 2. 캘린더 탭 -->
   <div class="page" id="page-calendar">
     <div class="flex-between" style="margin-bottom: 16px;">
       <div class="page-title" style="margin:0;">스케줄</div>
@@ -141,7 +139,6 @@ body { background:var(--bg); color:var(--txt); font-family:'Pretendard', sans-se
     </div>
   </div>
 
-  <!-- 3. 도장판 탭 -->
   <div class="page" id="page-coupon">
     <div class="flex-between" style="margin-bottom: 16px;">
       <div class="page-title" style="margin:0;">공연 및 도장판</div>
@@ -150,14 +147,12 @@ body { background:var(--bg); color:var(--txt); font-family:'Pretendard', sans-se
     <div id="stamp-list-area"></div>
   </div>
 
-  <!-- 4. 보관함 탭 -->
   <div class="page" id="page-archive">
     <div class="page-title">보관함</div>
     <div style="font-size:12px; color:var(--txt4); margin-bottom:16px;">폐막했거나 보관 처리된 공연 목록입니다.</div>
     <div id="archive-list-area"></div>
   </div>
 
-  <!-- 5. 설정 탭 -->
   <div class="page" id="page-settings">
     <div class="page-title">설정</div>
     <div class="card">
@@ -171,9 +166,6 @@ body { background:var(--bg); color:var(--txt); font-family:'Pretendard', sans-se
   </div>
 </div>
 
-<!-- ============================================== -->
-<!-- 공유 상세 뷰 레이어 (도장판/보관함 공통 사용) -->
-<!-- ============================================== -->
 <div id="layer-show-detail">
   <button class="btn sm" style="margin-bottom:16px;" onclick="closeShowDetail()">← 목록으로</button>
   <div class="card" id="detail-point-card" style="border-top: 4px solid var(--point);">
@@ -201,7 +193,6 @@ body { background:var(--bg); color:var(--txt); font-family:'Pretendard', sans-se
     <div id="sd-board-grid"></div>
   </div>
 
-  <!-- 관극 회차 표 (새로 추가됨) -->
   <div class="card">
     <div class="card-title" style="margin-bottom:12px;">관극 회차</div>
     <div style="overflow-x:auto; margin:0 -16px; padding:0 16px;">
@@ -212,7 +203,6 @@ body { background:var(--bg); color:var(--txt); font-family:'Pretendard', sans-se
             <th style="padding:8px; border-bottom:1px solid var(--brd); border-top:1px solid var(--brd);">시간</th>
             <th style="padding:8px; border-bottom:1px solid var(--brd); border-top:1px solid var(--brd);">캐스트</th>
             <th style="padding:8px; border-bottom:1px solid var(--brd); border-top:1px solid var(--brd);">좌석</th>
-            <th style="padding:8px; border-bottom:1px solid var(--brd); border-top:1px solid var(--brd);">할인권종</th>
           </tr>
         </thead>
         <tbody id="sd-history-tbody"></tbody>
@@ -229,7 +219,6 @@ body { background:var(--bg); color:var(--txt); font-family:'Pretendard', sans-se
   <button class="tab-btn" onclick="switchTab('settings', this)"><span class="icon">⚙️</span>설정</button>
 </nav>
 
-<!-- [모달] 이미지 크게 보기 -->
 <div class="overlay center" id="modal-image-viewer" onclick="if(event.target===this) closeModal('modal-image-viewer')">
   <div style="position:relative; max-width:90vw; max-height:90vh; display:flex; justify-content:center; align-items:center;">
     <button onclick="closeModal('modal-image-viewer')" style="position:absolute; top:-15px; right:-15px; background:var(--bg2); border:1px solid var(--brd2); color:var(--txt); width:32px; height:32px; border-radius:50%; cursor:pointer; font-weight:bold; box-shadow:0 2px 8px rgba(0,0,0,0.2);">✕</button>
@@ -237,7 +226,6 @@ body { background:var(--bg); color:var(--txt); font-family:'Pretendard', sans-se
   </div>
 </div>
 
-<!-- [모달 1] 공연 추가/수정 -->
 <div class="overlay" id="modal-show" onclick="if(event.target===this) closeModal('modal-show')">
   <div class="modal">
     <div class="page-title" id="sm-title" style="font-size:18px;">공연 추가</div>
@@ -266,7 +254,6 @@ body { background:var(--bg); color:var(--txt); font-family:'Pretendard', sans-se
   </div>
 </div>
 
-<!-- [모달 2] 관람 기록 추가/수정 -->
 <div class="overlay" id="modal-record" onclick="if(event.target===this) closeModal('modal-record')">
   <div class="modal">
     <div class="page-title" id="rm-title" style="font-size:18px;">관람 기록</div>
@@ -339,7 +326,6 @@ body { background:var(--bg); color:var(--txt); font-family:'Pretendard', sans-se
   </div>
 </div>
 
-<!-- [모달 3] 지갑 수동 추가/차감 -->
 <div class="overlay" id="modal-wallet" onclick="if(event.target===this) closeModal('modal-wallet')">
   <div class="modal">
     <div class="page-title" style="font-size:18px;">할인권 조작</div>
@@ -752,7 +738,7 @@ async function loadArchiveTab() {
 }
 
 // ------------------------------------------
-// 혜택 상세 페이지 렌더링
+// 혜택 상세 페이지 렌더링 (도장판 & 보관함 공용)
 // ------------------------------------------
 function closeShowDetail() {
   currentShowId = null;
@@ -760,6 +746,42 @@ function closeShowDetail() {
 }
 
 function editCurrentShow() { openShowModal(currentShowId); }
+
+async function editBoardName(showId, boardId) {
+  const shows = await DB.getAll('shows');
+  const show = shows.find(s => s.id === showId);
+  const board = show.boards.find(b => b.id === boardId);
+  
+  const newName = prompt("도장판의 새로운 이름을 입력하세요:", board.name);
+  if (newName !== null && newName.trim() !== "") {
+    board.name = newName.trim();
+    await DB.put('shows', show);
+    renderShowDetail(showId);
+  }
+}
+
+async function deleteBoard(showId, boardId) {
+  if(!confirm('이 도장판을 삭제하시겠습니까?\n(해당 도장판에 적립된 기록은 "도장판 미지정" 상태가 됩니다)')) return;
+  
+  const shows = await DB.getAll('shows');
+  const show = shows.find(s => s.id === showId);
+  
+  if(show.boards.length <= 1) {
+    return alert('최소 1개의 도장판은 유지해야 합니다.');
+  }
+  
+  show.boards = show.boards.filter(b => b.id !== boardId);
+  await DB.put('shows', show);
+  
+  const records = await DB.getAll('records');
+  const affectedRecords = records.filter(r => r.showId === showId && r.boardId === boardId);
+  for(let r of affectedRecords) {
+    r.boardId = '';
+    await DB.put('records', r);
+  }
+  
+  renderShowDetail(showId);
+}
 
 async function renderShowDetail(showId) {
   currentShowId = showId;
@@ -769,7 +791,6 @@ async function renderShowDetail(showId) {
   const showRecords = records.filter(r => r.showId === showId);
   
   document.getElementById('layer-show-detail').style.display = 'block';
-  
   document.documentElement.style.setProperty('--point', show.color);
   document.getElementById('sd-title').textContent = show.name;
   
@@ -825,7 +846,11 @@ async function renderShowDetail(showId) {
     return `
       <div class="board-card">
         <div class="board-head">
-          <span>${b.name}</span>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span>${b.name}</span>
+            <button class="btn sm" style="padding:2px 6px; font-size:10px; background:transparent; border:none; color:var(--txt4); text-decoration:underline;" onclick="editBoardName('${show.id}', '${b.id}')">수정</button>
+            <button class="btn sm" style="padding:2px 6px; font-size:10px; background:transparent; border:none; color:#ef4444; text-decoration:underline;" onclick="deleteBoard('${show.id}', '${b.id}')">삭제</button>
+          </div>
           <span style="color:var(--txt3); font-weight:400;">다음 혜택까지 ${remain}개</span>
         </div>
         <div class="board-progress"><div class="board-fill" style="width:${pct}%;"></div></div>
@@ -834,17 +859,17 @@ async function renderShowDetail(showId) {
     `;
   }).join('');
 
+  // 4. 관극 회차 표 (할인권종 제거)
   const historyRows = showRecords.sort((a,b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time)).map(r => {
     return `<tr>
       <td style="padding:10px; border-bottom:1px solid var(--brd);">${r.date.substring(5).replace('-','.')}</td>
       <td style="padding:10px; border-bottom:1px solid var(--brd);">${r.time}</td>
       <td style="padding:10px; border-bottom:1px solid var(--brd); color:var(--point); font-weight:700;">${r.cast || '-'}</td>
       <td style="padding:10px; border-bottom:1px solid var(--brd); font-size:11px;">${r.seat || '-'}</td>
-      <td style="padding:10px; border-bottom:1px solid var(--brd); font-size:11px; color:var(--txt3);">${r.usedDiscount || '-'}</td>
     </tr>`;
   }).join('');
   
-  document.getElementById('sd-history-tbody').innerHTML = historyRows || `<tr><td colspan="5" style="padding:20px; color:var(--txt4);">기록이 없습니다.</td></tr>`;
+  document.getElementById('sd-history-tbody').innerHTML = historyRows || `<tr><td colspan="4" style="padding:20px; color:var(--txt4);">기록이 없습니다.</td></tr>`;
 }
 
 // ==========================================
@@ -876,12 +901,10 @@ async function saveWalletManual() {
 }
 
 // ==========================================
-// 관람 등록 모달 (Syntax 에러 완벽 해결)
+// 관람 등록 모달
 // ==========================================
 async function openRecordModal(editId = null, defaultDate = null) {
   const shows = await DB.getAll('shows');
-  
-  // 수정일 경우, 해당 기록이 속한 극의 ID를 먼저 찾아냅니다.
   let editTargetShowId = null;
   if (editId) {
     const records = await DB.getAll('records');
@@ -889,13 +912,10 @@ async function openRecordModal(editId = null, defaultDate = null) {
     if (r) editTargetShowId = r.showId;
   }
 
-  // 보관 처리되지 않았거나, 현재 수정하려는 그 극만 필터링합니다.
   const activeShows = shows.filter(s => !s.isArchived || (editTargetShowId && s.id === editTargetShowId)).sort((a,b) => a.name.localeCompare(b.name));
-  
   if (activeShows.length === 0) return alert('먼저 도장판 탭에서 공연을 추가해주세요.');
 
   document.getElementById('rm-show').innerHTML = activeShows.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-  
   const btnArea = document.getElementById('rm-btns');
 
   if (editId) {
