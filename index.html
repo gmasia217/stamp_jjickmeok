@@ -600,7 +600,8 @@ async function renderCalendar() {
       const isUncertain = (!r.usedDiscount) && (!r.seat || r.seat.trim() === '');
       const badgeBg = isUncertain ? 'var(--txt4)' : show.color;
       
-      return `<div class="cal-badge" style="background-color: ${badgeBg};">
+      // 👇 이 부분 수정됨: 뱃지에 cursor:pointer 와 onclick 추가
+      return `<div class="cal-badge" style="background-color: ${badgeBg}; cursor: pointer;" onclick="event.stopPropagation(); openRecordModal('${r.id}')">
         <div style="font-size:9px; opacity:0.9;">${r.time}</div>
         <div style="font-weight:800; margin:2px 0;">${show.name}</div>
         <div style="font-size:9px; opacity:0.9;">${r.cast || ''}</div>
@@ -1060,17 +1061,17 @@ async function updateRecordDeps(selDisc = '', selBoard = '') {
   if(!showId) return;
   const show = (await DB.getAll('shows')).find(s => s.id === showId);
   
-  // 할인권인지 체크된 항목과 쿠폰팩만 목록에 추가
-  const rewardDisc = (show.rewards || []).filter(r => r.isDiscount !== false).map(r => r.label);
-  const packDisc = (show.couponPacks || []).map(c => c.label);
-  const allDiscs = [...new Set([...DEFAULT_DISCOUNTS, ...rewardDisc, ...packDisc])];
-  
+  const customDisc = (show.rewards || []).map(r => r.label);
+  const allDiscs = [...new Set([...DEFAULT_DISCOUNTS, ...customDisc])];
   const discSel = document.getElementById('rm-disc');
   discSel.innerHTML = `<option value="">사용 안 함</option>` + allDiscs.map(d => `<option value="${d}">${d}</option>`).join('');
   if (selDisc) discSel.value = selDisc;
 
   const boardSel = document.getElementById('rm-board-select');
-  boardSel.innerHTML = (show.boards || [{id:'b1', name:'도장판 1'}]).map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+  // 👇 이 부분 수정됨: 맨 앞에 '선택 안 함' 옵션 추가
+  const boardOpts = `<option value="">선택 안 함 (도장 미적립)</option>` + 
+    (show.boards || [{id:'b1', name:'도장판 1'}]).map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+  boardSel.innerHTML = boardOpts;
   if (selBoard) boardSel.value = selBoard;
 }
 
