@@ -119,10 +119,11 @@ body { background:var(--bg); color:var(--txt); font-family:'Pretendard', sans-se
       <button class="btn prim sm" onclick="openRecordModal()">+ 관람 등록</button>
     </div>
     
-    <div class="card" style="padding:12px;">
-      <div style="display: flex; gap: 8px; margin-bottom: 12px; align-items: center;">
+    <div style="display: flex; gap: 8px; margin-bottom: 12px; align-items: center;">
         <select class="fselect" id="filter-show" style="padding:8px; flex:1;" onchange="updateActorFilter()"></select>
-        <select class="fselect" id="filter-actor" style="padding:8px; flex:1;" onchange="renderCalendar()"></select>
+        <!-- 👇 배우 선택칸이 검색 가능한 입력칸으로 변경됨 -->
+        <input type="text" list="actor-list" class="finput" id="filter-actor" style="padding:8px; flex:1;" placeholder="배우명 검색 (전체는 비우기)" oninput="renderCalendar()">
+        <datalist id="actor-list"></datalist>
         <button class="btn sm" style="white-space:nowrap; background:var(--bg3);" onclick="resetCalFilter()">초기화</button>
       </div>
 
@@ -554,12 +555,15 @@ async function updateActorFilter() {
     }
   });
   const sortedActors = [...actors].sort((a,b) => a.localeCompare(b));
-  document.getElementById('filter-actor').innerHTML = `<option value="all">전체 배우</option>` + sortedActors.map(a => `<option value="${a}">${a}</option>`).join('');
+  // 👇 드롭다운 대신 검색 가능한 datalist 옵션으로 생성
+  document.getElementById('actor-list').innerHTML = sortedActors.map(a => `<option value="${a}">`).join('');
   renderCalendar();
 }
 
 function resetCalFilter() {
   document.getElementById('filter-show').value = 'all';
+  // 👇 초기화 시 검색칸의 글자를 비움
+  document.getElementById('filter-actor').value = ''; 
   updateActorFilter();
 }
 
@@ -576,13 +580,16 @@ async function renderCalendar() {
   const shows = await DB.getAll('shows');
   
   const selShow = document.getElementById('filter-show').value;
-  const selActor = document.getElementById('filter-actor').value;
+  const selActor = document.getElementById('filter-actor').value.trim(); // 입력된 검색어 가져오기
 
   const filtered = records.filter(r => {
     const mShow = selShow === 'all' || r.showId === selShow;
-    const mActor = selActor === 'all' || (r.cast && r.cast.includes(selActor));
+    // 👇 검색칸이 비어있으면 통과, 글자가 있으면 캐스팅에 포함되는지 확인
+    const mActor = selActor === '' || (r.cast && r.cast.includes(selActor));
     return mShow && mActor;
   });
+
+  // ... (이 아래에 있는 달력 그리는 for문 코드는 그대로 둡니다)
 
   const firstDay = new Date(curYear, curMonth, 1).getDay();
   const daysInMonth = new Date(curYear, curMonth+1, 0).getDate();
