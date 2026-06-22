@@ -100,28 +100,30 @@ body { background:var(--bg); color:var(--txt); font-family:'Pretendard', sans-se
 .board-progress { width:100%; height:8px; background:var(--bg4); border-radius:4px; position:relative; margin-top:8px; }
 .board-fill { height:100%; background:var(--point); border-radius:4px; transition: width 0.3s; }
 
-#layer-show-detail { display:none; position:fixed; inset:0; background:var(--bg); z-index:50; overflow-y:auto; padding:16px; padding-bottom:calc(var(--tab-h) + env(safe-area-inset-bottom, 0px) + 16px); animation: fadeIn 0.2s ease; }
+/* COLLAPSIBLE */
+.collapsible-content { display:none; animation: fadeIn 0.2s ease; }
+.collapsible-content.open { display:block; }
+
+#layer-show-detail { display:none; position:fixed; inset:0; background:var(--bg); z-index:150; overflow-y:auto; padding:16px; padding-bottom:calc(var(--tab-h) + env(safe-area-inset-bottom, 0px) + 16px); animation: fadeIn 0.2s ease; }
 </style>
 </head>
 <body>
 
 <div id="app">
-  <!-- 1. 홈 탭 -->
   <div class="page active" id="page-home">
     <div class="page-title">다가올 관람 일정</div>
     <div id="home-ticket-list"></div>
   </div>
 
-  <!-- 2. 캘린더 탭 -->
   <div class="page" id="page-calendar">
     <div class="flex-between" style="margin-bottom: 16px;">
       <div class="page-title" style="margin:0;">스케줄</div>
       <button class="btn prim sm" onclick="openRecordModal()">+ 관람 등록</button>
     </div>
     
-    <div style="display: flex; gap: 8px; margin-bottom: 12px; align-items: center;">
+    <div class="card" style="padding:12px;">
+      <div style="display: flex; gap: 8px; margin-bottom: 12px; align-items: center;">
         <select class="fselect" id="filter-show" style="padding:8px; flex:1;" onchange="updateActorFilter()"></select>
-        <!-- 👇 배우 선택칸이 검색 가능한 입력칸으로 변경됨 -->
         <input type="text" list="actor-list" class="finput" id="filter-actor" style="padding:8px; flex:1;" placeholder="배우명 검색 (전체는 비우기)" oninput="renderCalendar()">
         <datalist id="actor-list"></datalist>
         <button class="btn sm" style="white-space:nowrap; background:var(--bg3);" onclick="resetCalFilter()">초기화</button>
@@ -136,23 +138,17 @@ body { background:var(--bg); color:var(--txt); font-family:'Pretendard', sans-se
     </div>
   </div>
 
-  <!-- 3. 도장판 탭 -->
   <div class="page" id="page-coupon">
-    <div class="flex-between" style="margin-bottom: 16px;">
+    <div class="flex-between" style="margin-bottom: 16px; align-items: center;">
       <div class="page-title" style="margin:0;">공연 및 도장판</div>
-      <button class="btn prim sm" onclick="openShowModal()">+ 공연 추가</button>
+      <div style="display: flex; gap: 8px;">
+        <button class="btn sm" onclick="openArchiveModal()">📦 보관함</button>
+        <button class="btn prim sm" onclick="openShowModal()">+ 공연 추가</button>
+      </div>
     </div>
     <div id="stamp-list-area"></div>
   </div>
 
-  <!-- 4. 보관함 탭 -->
-  <div class="page" id="page-archive">
-    <div class="page-title">보관함</div>
-    <div style="font-size:12px; color:var(--txt4); margin-bottom:16px;">폐막했거나 보관 처리된 공연 목록입니다.</div>
-    <div id="archive-list-area"></div>
-  </div>
-
-  <!-- 5. 설정 탭 -->
   <div class="page" id="page-settings">
     <div class="page-title">설정</div>
     <div class="card">
@@ -166,9 +162,6 @@ body { background:var(--bg); color:var(--txt); font-family:'Pretendard', sans-se
   </div>
 </div>
 
-<!-- ============================================== -->
-<!-- 공유 상세 뷰 레이어 -->
-<!-- ============================================== -->
 <div id="layer-show-detail">
   <button class="btn sm" style="margin-bottom:16px;" onclick="closeShowDetail()">← 목록으로</button>
   <div class="card" id="detail-point-card" style="border-top: 4px solid var(--point);">
@@ -189,6 +182,16 @@ body { background:var(--bg); color:var(--txt); font-family:'Pretendard', sans-se
       </div>
     </div>
     <div class="wallet-grid" id="sd-wallet-grid"></div>
+    
+    <div style="font-size:12px; font-weight:700; color:var(--txt3); cursor:pointer; margin-top:12px; text-align:right;" onclick="toggleCollapsible('sd-wallet-history')">▶ 할인권 상세 기록 (접기/펴기)</div>
+    <div id="sd-wallet-history" class="collapsible-content" style="margin-top:12px; border-top:1px dashed var(--brd); padding-top:12px;">
+      <div style="overflow-x:auto;">
+        <table style="width:100%; text-align:center; font-size:11px; white-space:nowrap; border-collapse:collapse;">
+          <thead id="wallet-history-thead"></thead>
+          <tbody id="wallet-history-tbody"></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
   <div class="card">
@@ -217,23 +220,15 @@ body { background:var(--bg); color:var(--txt); font-family:'Pretendard', sans-se
   </div>
 </div>
 
-<nav class="tab-bar">
-  <button class="tab-btn active" onclick="switchTab('home', this)"><span class="icon">🎫</span>홈</button>
-  <button class="tab-btn" onclick="switchTab('calendar', this)"><span class="icon">📅</span>스케줄</button>
-  <button class="tab-btn" onclick="switchTab('coupon', this)"><span class="icon">🎯</span>도장판</button>
-  <button class="tab-btn" onclick="switchTab('archive', this)"><span class="icon">📦</span>보관함</button>
-  <button class="tab-btn" onclick="switchTab('settings', this)"><span class="icon">⚙️</span>설정</button>
-</nav>
-
-<!-- [모달] 이미지 크게 보기 -->
-<div class="overlay center" id="modal-image-viewer" onclick="if(event.target===this) closeModal('modal-image-viewer')">
-  <div style="position:relative; max-width:90vw; max-height:90vh; display:flex; justify-content:center; align-items:center;">
-    <button onclick="closeModal('modal-image-viewer')" style="position:absolute; top:-15px; right:-15px; background:var(--bg2); border:1px solid var(--brd2); color:var(--txt); width:32px; height:32px; border-radius:50%; cursor:pointer; font-weight:bold; box-shadow:0 2px 8px rgba(0,0,0,0.2);">✕</button>
-    <img id="viewer-img" src="" style="max-width:100%; max-height:85vh; border-radius:8px; box-shadow:0 5px 20px rgba(0,0,0,0.3); object-fit:contain;">
+<div class="overlay" id="modal-archive-list" onclick="if(event.target===this) closeModal('modal-archive-list')">
+  <div class="modal">
+    <div class="page-title" style="font-size:18px; margin-bottom:12px;">📦 보관함 목록</div>
+    <div style="font-size:12px; color:var(--txt4); margin-bottom:16px;">보관 처리된 공연 목록입니다. 클릭 시 상세 내역이 열립니다.</div>
+    <div id="archive-list-container" style="max-height: 50vh; overflow-y: auto;"></div>
+    <button class="btn" style="width:100%; margin-top:16px;" onclick="closeModal('modal-archive-list')">닫기</button>
   </div>
 </div>
 
-<!-- [모달 1] 공연 추가/수정 -->
 <div class="overlay" id="modal-show" onclick="if(event.target===this) closeModal('modal-show')">
   <div class="modal">
     <div class="page-title" id="sm-title" style="font-size:18px;">공연 추가</div>
@@ -262,15 +257,11 @@ body { background:var(--bg); color:var(--txt); font-family:'Pretendard', sans-se
   </div>
 </div>
 
-<!-- [모달 1-B] 쿠폰팩 관리 -->
 <div class="overlay" id="modal-coupon-pack" onclick="if(event.target===this) closeModal('modal-coupon-pack')">
   <div class="modal">
     <div class="page-title" style="font-size:18px;">이벤트 쿠폰팩 관리</div>
-    <div style="font-size:12px; color:var(--txt4); margin-bottom:16px;">이벤트로 받은 쿠폰을 등록하면 지갑 현황 및 할인권종에 즉시 추가됩니다.</div>
-    
     <div id="cm-container"></div>
     <button class="btn sm" style="width:100%; border:1px dashed var(--brd2); background:var(--bg3); margin-top: 12px; margin-bottom: 24px;" onclick="addCouponRow()">+ 쿠폰팩 추가</button>
-    
     <div style="display:flex; gap:10px;">
       <button class="btn" style="flex:1;" onclick="closeModal('modal-coupon-pack')">취소</button>
       <button class="btn prim" style="flex:1;" onclick="saveCouponPack()">저장</button>
@@ -278,7 +269,6 @@ body { background:var(--bg); color:var(--txt); font-family:'Pretendard', sans-se
   </div>
 </div>
 
-<!-- [모달 2] 관람 기록 추가/수정 -->
 <div class="overlay" id="modal-record" onclick="if(event.target===this) closeModal('modal-record')">
   <div class="modal">
     <div class="page-title" id="rm-title" style="font-size:18px;">관람 기록</div>
@@ -351,10 +341,13 @@ body { background:var(--bg); color:var(--txt); font-family:'Pretendard', sans-se
   </div>
 </div>
 
-<!-- [모달 3] 지갑 수동 조작 -->
 <div class="overlay" id="modal-wallet" onclick="if(event.target===this) closeModal('modal-wallet')">
   <div class="modal">
     <div class="page-title" style="font-size:18px;">할인권 수동 조작</div>
+    <div class="fg">
+      <label class="flbl">날짜</label>
+      <input type="date" id="wm-date" class="finput">
+    </div>
     <div class="fg">
       <label class="flbl">항목 선택</label>
       <select id="wm-label" class="fselect"></select>
@@ -430,6 +423,7 @@ const DEFAULT_DISCOUNTS = ["프리뷰할", "조예할", "재관할", "마티네�
 
 window.onload = async () => {
   await DB.init();
+  if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./sw.js'); }
   switchTab('home', document.querySelector('.tab-btn'));
 };
 
@@ -443,7 +437,6 @@ function switchTab(tabId, btnEl) {
   if(tabId === 'home') loadHome();
   if(tabId === 'calendar') initCalendar();
   if(tabId === 'coupon') loadStampTab();
-  if(tabId === 'archive') loadArchiveTab();
 }
 
 function openModal(id) { document.getElementById(id).classList.add('show'); }
@@ -555,15 +548,13 @@ async function updateActorFilter() {
     }
   });
   const sortedActors = [...actors].sort((a,b) => a.localeCompare(b));
-  // 👇 드롭다운 대신 검색 가능한 datalist 옵션으로 생성
   document.getElementById('actor-list').innerHTML = sortedActors.map(a => `<option value="${a}">`).join('');
   renderCalendar();
 }
 
 function resetCalFilter() {
   document.getElementById('filter-show').value = 'all';
-  // 👇 초기화 시 검색칸의 글자를 비움
-  document.getElementById('filter-actor').value = ''; 
+  document.getElementById('filter-actor').value = '';
   updateActorFilter();
 }
 
@@ -580,16 +571,13 @@ async function renderCalendar() {
   const shows = await DB.getAll('shows');
   
   const selShow = document.getElementById('filter-show').value;
-  const selActor = document.getElementById('filter-actor').value.trim(); // 입력된 검색어 가져오기
+  const selActor = document.getElementById('filter-actor').value.trim();
 
   const filtered = records.filter(r => {
     const mShow = selShow === 'all' || r.showId === selShow;
-    // 👇 검색칸이 비어있으면 통과, 글자가 있으면 캐스팅에 포함되는지 확인
     const mActor = selActor === '' || (r.cast && r.cast.includes(selActor));
     return mShow && mActor;
   });
-
-  // ... (이 아래에 있는 달력 그리는 for문 코드는 그대로 둡니다)
 
   const firstDay = new Date(curYear, curMonth, 1).getDay();
   const daysInMonth = new Date(curYear, curMonth+1, 0).getDate();
@@ -607,8 +595,7 @@ async function renderCalendar() {
       const isUncertain = (!r.usedDiscount) && (!r.seat || r.seat.trim() === '');
       const badgeBg = isUncertain ? 'var(--txt4)' : show.color;
       
-      // 👇 이 부분 수정됨: 뱃지에 cursor:pointer 와 onclick 추가
-      return `<div class="cal-badge" style="background-color: ${badgeBg}; cursor: pointer;" onclick="event.stopPropagation(); openRecordModal('${r.id}')">
+      return `<div class="cal-badge" style="background-color: ${badgeBg}; cursor:pointer;" onclick="event.stopPropagation(); openRecordModal('${r.id}')">
         <div style="font-size:9px; opacity:0.9;">${r.time}</div>
         <div style="font-weight:800; margin:2px 0;">${show.name}</div>
         <div style="font-size:9px; opacity:0.9;">${r.cast || ''}</div>
@@ -627,7 +614,7 @@ async function renderCalendar() {
 }
 
 // ==========================================
-// 3. 공연 설정 & 쿠폰팩 관리
+// 3. 공연 설정 & 쿠폰팩 관리 & 보관함 모달 오픈
 // ==========================================
 function addRewardRow(n='', label='', qty=1, isDiscount=true) {
   const container = document.getElementById('sm-rewards-container');
@@ -725,7 +712,6 @@ async function saveShow() {
   closeModal('modal-show');
   
   loadStampTab();
-  loadArchiveTab();
   if (currentShowId === showData.id) renderShowDetail(showData.id);
 }
 
@@ -736,7 +722,9 @@ async function toggleArchiveShow(id) {
   closeModal('modal-show');
   closeShowDetail();
   loadStampTab();
-  loadArchiveTab();
+  if (document.getElementById('modal-archive-list').classList.contains('show')) {
+    openArchiveModal(); // 보관함 목록 모달 열려있으면 동기화 리로드
+  }
 }
 
 async function deleteShow(id) {
@@ -747,7 +735,7 @@ async function deleteShow(id) {
   closeModal('modal-show');
   closeShowDetail();
   loadStampTab();
-  loadArchiveTab();
+  closeModal('modal-archive-list');
 }
 
 async function loadStampTab() {
@@ -768,27 +756,28 @@ async function loadStampTab() {
   `).join('');
 }
 
-async function loadArchiveTab() {
+// 📦 보관함 모달 리스트 로드
+async function openArchiveModal() {
   const shows = await DB.getAll('shows');
   const archivedShows = shows.filter(s => s.isArchived).sort((a,b) => a.name.localeCompare(b.name));
-  const listArea = document.getElementById('archive-list-area');
+  const container = document.getElementById('archive-list-container');
   
   if(archivedShows.length === 0) {
-    listArea.innerHTML = '<div style="text-align:center; padding: 40px 0; color:var(--txt4);">보관된 공연이 없습니다.</div>';
-    return;
+    container.innerHTML = '<div style="text-align:center; padding: 30px 0; color:var(--txt4);">보관함이 비어 있습니다.</div>';
+  } else {
+    container.innerHTML = archivedShows.map(s => `
+      <div class="card flex-between" style="cursor:pointer; border-left: 12px solid ${s.color}; margin-bottom:10px; padding: 24px 16px; background: var(--bg3);" onclick="closeModal('modal-archive-list'); renderShowDetail('${s.id}')">
+        <div style="font-weight:800; font-size:16px;">${s.name}</div>
+        <div style="font-size:12px; color:var(--txt4);">기록 보기 〉</div>
+      </div>
+    `).join('');
   }
-
-  listArea.innerHTML = archivedShows.map(s => `
-    <div class="card flex-between" style="cursor:pointer; border-left: 12px solid ${s.color}; margin-bottom:12px; padding: 36px 20px;" onclick="renderShowDetail('${s.id}')">
-      <div style="font-weight:800; font-size:18px;">${s.name}</div>
-      <div style="font-size:13px; color:var(--txt4);">상세 보기 〉</div>
-    </div>
-  `).join('');
+  openModal('modal-archive-list');
 }
 
-// ------------------------------------------
+// ==========================================
 // 쿠폰팩 모달
-// ------------------------------------------
+// ==========================================
 function addCouponRow(label='', qty=1) {
   const container = document.getElementById('cm-container');
   const row = document.createElement('div');
@@ -867,7 +856,7 @@ async function renderShowDetail(showId) {
   const shows = await DB.getAll('shows');
   const records = await DB.getAll('records');
   const show = shows.find(s => s.id === showId);
-  const showRecords = records.filter(r => r.showId === showId);
+  const sortedRecords = records.filter(r => r.showId === showId).sort((a,b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
   
   document.getElementById('layer-show-detail').style.display = 'block';
   document.documentElement.style.setProperty('--point', show.color);
@@ -883,27 +872,69 @@ async function renderShowDetail(showId) {
   const walletMap = { '재관람 할인표': { earned: showRecords.length, used: 0, manualAdd: 0, manualSub: 0 } };
   const totalStamps = showRecords.reduce((sum, r) => sum + (Number(r.multi)||1), 0);
   
-  // 모든 보상 지갑에 추가 (조건 제거됨)
   (show.rewards || []).forEach(r => {
     walletMap[r.label] = { earned: Math.floor(totalStamps / r.n) * (r.qty || 1), used: 0, manualAdd: 0, manualSub: 0 };
   });
 
-  // 쿠폰팩 지갑에 병합
+  let combinedWallet = [];
   (show.couponPacks || []).forEach(c => {
     if(!walletMap[c.label]) walletMap[c.label] = { earned: 0, used: 0, manualAdd: 0, manualSub: 0 };
     walletMap[c.label].earned += (c.qty || 1);
-  });
-
-  showRecords.forEach(r => {
-    if (r.usedDiscount && walletMap[r.usedDiscount]) walletMap[r.usedDiscount].used += 1;
+    combinedWallet.push({
+      id: 'pack_' + c.label + '_' + Date.now(), date: todayStr(), type: 'add',
+      items: { [c.label]: c.qty || 1 }, memo: '이벤트 쿠폰팩', isAuto: true
+    });
   });
 
   (show.walletLogs || []).forEach(log => {
     if(!walletMap[log.label]) walletMap[log.label] = { earned:0, used:0, manualAdd:0, manualSub:0 };
     if(log.type === 'add') walletMap[log.label].manualAdd += log.amount;
     if(log.type === 'sub') walletMap[log.label].manualSub += log.amount;
+    combinedWallet.push({
+      id: log.id, date: log.date || new Date(parseInt(log.id)).toISOString().split('T')[0],
+      type: log.type, items: { [log.label]: log.amount }, memo: log.memo || '수동 조작', isAuto: false
+    });
   });
 
+  let boardCum = {};
+  (show.boards || []).forEach(b => boardCum[b.id] = 0);
+
+  sortedRecords.forEach(r => {
+    walletMap['재관람 할인표'].earned += 1;
+    combinedWallet.push({
+      id: 'auto_add_' + r.id, date: r.date, type: 'add',
+      items: { '재관람 할인표': 1 }, memo: '관극 적립', isAuto: true
+    });
+
+    if (r.usedDiscount && walletMap[r.usedDiscount]) {
+      walletMap[r.usedDiscount].used += 1;
+      combinedWallet.push({
+        id: 'auto_sub_' + r.id, date: r.date, type: 'sub',
+        items: { [r.usedDiscount]: 1 }, memo: `${r.usedDiscount} 사용`, isAuto: true
+      });
+    }
+
+    if (r.boardId) {
+      let before = boardCum[r.boardId] || 0;
+      let added = Number(r.multi) || 1;
+      let after = before + added;
+      boardCum[r.boardId] = after;
+
+      (show.rewards || []).forEach(rew => {
+        let earnedCount = Math.floor(after / rew.n) - Math.floor(before / rew.n);
+        if (earnedCount > 0) {
+          const qty = (rew.qty || 1) * earnedCount;
+          walletMap[rew.label].earned += qty;
+          combinedWallet.push({
+            id: 'auto_ms_' + r.id + '_' + rew.label, date: r.date, type: 'add',
+            items: { [rew.label]: qty }, memo: `${rew.n}회 달성 보상`, isAuto: true
+          });
+        }
+      });
+    }
+  });
+
+  // 지갑 렌더링
   document.getElementById('sd-wallet-grid').innerHTML = Object.keys(walletMap).map(label => {
     const st = walletMap[label];
     const curr = (st.earned + st.manualAdd) - (st.used + st.manualSub);
@@ -925,15 +956,45 @@ async function renderShowDetail(showId) {
     `;
   }).join('');
 
+  // 할인권 상세 기록 표 빌드
+  combinedWallet.sort((a,b) => a.date.localeCompare(b.date));
+  const walletKeys = Object.keys(walletMap);
+  let thHtml = `<tr><th style="padding:8px; border-bottom:1px solid var(--brd);">날짜</th><th style="padding:8px; border-bottom:1px solid var(--brd);">유형</th>`;
+  walletKeys.forEach(k => { thHtml += `<th style="padding:8px; border-bottom:1px solid var(--brd);">${k}</th>`; });
+  thHtml += `<th style="padding:8px; border-bottom:1px solid var(--brd);">메모</th><th style="padding:8px; border-bottom:1px solid var(--brd);">관리</th></tr>`;
+  document.getElementById('wallet-history-thead').innerHTML = thHtml;
+
+  let tbodyHtml = combinedWallet.map(w => {
+    const dateDisp = w.date.substring(5).replace('-','.');
+    const typeHtml = w.type === 'add' ? '<span style="color:var(--txt); font-weight:700;">+</span>' : '<span style="color:#ef4444; font-weight:700;">-</span>';
+    let cols = '';
+    walletKeys.forEach(k => {
+      let val = w.items[k];
+      if (val) cols += `<td>${w.type === 'add' ? '<span style="font-weight:700;">+'+val+'</span>' : '<span style="color:#ef4444; font-weight:700;">-'+val+'</span>'}</td>`;
+      else cols += `<td style="color:var(--txt4);">-</td>`;
+    });
+    const ctrlHtml = w.isAuto ? `<span style="font-size:10px; color:var(--txt4);">자동</span>` : `<button class="btn sm" style="padding:2px 6px; font-size:10px; color:#ef4444; border:none; background:transparent;" onclick="deleteWalletManual('${w.id}')">삭제</button>`;
+    return `<tr><td style="padding:8px; border-bottom:1px solid var(--brd);">${dateDisp}</td><td style="padding:8px; border-bottom:1px solid var(--brd);">${typeHtml}</td>${cols}<td style="padding:8px; border-bottom:1px solid var(--brd); text-align:left;">${w.memo}</td><td style="padding:8px; border-bottom:1px solid var(--brd);">${ctrlHtml}</td></tr>`;
+  }).join('');
+  document.getElementById('wallet-history-tbody').innerHTML = tbodyHtml || `<tr><td colspan="${3+walletKeys.length}" style="padding:20px; color:var(--txt4);">기록이 없습니다.</td></tr>`;
+
+  // 도장판 현황 및 상세 이력
   const maxReward = (show.rewards && show.rewards.length > 0) ? Math.max(...show.rewards.map(r=>r.n)) : 10;
   
   document.getElementById('sd-board-grid').innerHTML = show.boards.map(b => {
-    const bStamps = showRecords.filter(r => r.boardId === b.id).reduce((sum, r) => sum + (Number(r.multi)||1), 0);
+    const bRecords = sortedRecords.filter(r => r.boardId === b.id);
+    const bStamps = bRecords.reduce((sum, r) => sum + (Number(r.multi)||1), 0);
     const boardIdx = Math.floor(bStamps / maxReward) + 1;
     const currStamps = bStamps % maxReward;
     const remain = maxReward - currStamps;
     const pct = (currStamps / maxReward) * 100;
     
+    const histRows = bRecords.map(r => `<tr>
+      <td style="padding:6px; border-bottom:1px solid var(--brd);">${r.date.substring(5).replace('-','.')}</td>
+      <td style="padding:6px; border-bottom:1px solid var(--brd);">${r.time}</td>
+      <td style="padding:6px; border-bottom:1px solid var(--brd); color:var(--point); font-weight:700;">+${r.multi || 1}</td>
+    </tr>`).join('');
+
     return `
       <div class="board-card">
         <div class="board-head">
@@ -942,15 +1003,24 @@ async function renderShowDetail(showId) {
             <button class="btn sm" style="padding:2px 6px; font-size:10px; background:transparent; border:none; color:var(--txt4); text-decoration:underline;" onclick="editBoardName('${show.id}', '${b.id}')">수정</button>
             <button class="btn sm" style="padding:2px 6px; font-size:10px; background:transparent; border:none; color:#ef4444; text-decoration:underline;" onclick="deleteBoard('${show.id}', '${b.id}')">삭제</button>
           </div>
-          <span style="color:var(--txt3); font-weight:400;">다음 혜택까지 ${remain}개</span>
+          <span style="font-size:10px; color:var(--txt4); cursor:pointer;" onclick="toggleCollapsible('board-hist-${b.id}')">상세 ▼</span>
         </div>
+        <div style="text-align:right; font-size:11px; margin-bottom:4px; color:var(--txt3);">다음 혜택까지 ${remain}개</div>
         <div class="board-progress"><div class="board-fill" style="width:${pct}%;"></div></div>
         <div style="text-align:right; font-size:11px; margin-top:6px; color:var(--txt3);">현재 ${currStamps} / 누적 ${bStamps}</div>
+        
+        <div id="board-hist-${b.id}" class="collapsible-content" style="margin-top:10px; border-top:1px dashed var(--brd); padding-top:10px;">
+          <table style="width:100%; font-size:11px; text-align:center; border-collapse:collapse;">
+            <thead><tr style="color:var(--txt3); border-bottom:1px solid var(--brd);"><th style="padding:6px;">날짜</th><th style="padding:6px;">시간</th><th style="padding:6px;">적립</th></tr></thead>
+            <tbody>${histRows || '<tr><td colspan="3" style="padding:10px; color:var(--txt4);">기록이 없습니다.</td></tr>'}</tbody>
+          </table>
+        </div>
       </div>
     `;
   }).join('');
 
-  const historyRows = showRecords.sort((a,b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time)).map(r => {
+  // 관극 회차 표 
+  const historyRows = sortedRecords.map(r => {
     return `<tr>
       <td style="padding:10px; border-bottom:1px solid var(--brd);">${r.date.substring(5).replace('-','.')}</td>
       <td style="padding:10px; border-bottom:1px solid var(--brd);">${r.time}</td>
@@ -968,27 +1038,37 @@ async function renderShowDetail(showId) {
 async function openWalletModal() {
   if(!currentShowId) return;
   const show = (await DB.getAll('shows')).find(s => s.id === currentShowId);
-  const rewardLabels = (show.rewards || []).map(r => r.label); // 모든 리워드 
+  const rewardLabels = (show.rewards || []).map(r => r.label); 
   const packLabels = (show.couponPacks || []).map(c => c.label);
   const labels = ['재관람 할인표', ...rewardLabels, ...packLabels];
   
   document.getElementById('wm-label').innerHTML = labels.map(l => `<option value="${l}">${l}</option>`).join('');
+  document.getElementById('wm-date').value = todayStr();
   document.getElementById('wm-amount').value = 1;
   document.getElementById('wm-type').value = 'add';
   openModal('modal-wallet');
 }
 
 async function saveWalletManual() {
+  const date = document.getElementById('wm-date').value || todayStr();
   const label = document.getElementById('wm-label').value;
   const type = document.getElementById('wm-type').value;
   const amount = parseInt(document.getElementById('wm-amount').value);
 
   const show = (await DB.getAll('shows')).find(s => s.id === currentShowId);
   if(!show.walletLogs) show.walletLogs = [];
-  show.walletLogs.push({ id: Date.now().toString(), label, type, amount });
+  show.walletLogs.push({ id: Date.now().toString(), label, type, amount, date, memo: '수동 보정' });
   
   await DB.put('shows', show);
   closeModal('modal-wallet');
+  renderShowDetail(currentShowId);
+}
+
+async function deleteWalletManual(logId) {
+  if(!confirm('이 수동 기록을 삭제할까요?')) return;
+  const show = (await DB.getAll('shows')).find(s => s.id === currentShowId);
+  show.walletLogs = show.walletLogs.filter(l => l.id !== logId);
+  await DB.put('shows', show);
   renderShowDetail(currentShowId);
 }
 
@@ -1035,8 +1115,10 @@ async function openRecordModal(editId = null, defaultDate = null) {
     await updateRecordDeps(r.usedDiscount, r.boardId);
     
     btnArea.innerHTML = `
-      <button class="btn" style="flex:1; color:#ef4444; border-color:#ef4444;" onclick="deleteRecord('${r.id}')">기록 삭제</button>
-      <button class="btn prim" style="flex:1;" onclick="saveRecord()">수정 저장</button>
+      <div style="display:flex; gap:10px; width:100%;">
+        <button class="btn" style="flex:1; color:#ef4444; border-color:#ef4444;" onclick="deleteRecord('${r.id}')">삭제</button>
+        <button class="btn prim" style="flex:1;" onclick="saveRecord()">수정 저장</button>
+      </div>
     `;
   } else {
     document.getElementById('rm-title').textContent = '새 관람 등록';
@@ -1056,8 +1138,10 @@ async function openRecordModal(editId = null, defaultDate = null) {
     await updateRecordDeps();
 
     btnArea.innerHTML = `
-      <button class="btn" style="flex:1;" onclick="closeModal('modal-record')">취소</button>
-      <button class="btn prim" style="flex:1;" onclick="saveRecord()">등록하기</button>
+      <div style="display:flex; gap:10px; width:100%;">
+        <button class="btn" style="flex:1;" onclick="closeModal('modal-record')">취소</button>
+        <button class="btn prim" style="flex:1;" onclick="saveRecord()">등록하기</button>
+      </div>
     `;
   }
   openModal('modal-record');
@@ -1068,14 +1152,15 @@ async function updateRecordDeps(selDisc = '', selBoard = '') {
   if(!showId) return;
   const show = (await DB.getAll('shows')).find(s => s.id === showId);
   
-  const customDisc = (show.rewards || []).map(r => r.label);
-  const allDiscs = [...new Set([...DEFAULT_DISCOUNTS, ...customDisc])];
+  const rewardDisc = (show.rewards || []).filter(r => r.isDiscount !== false).map(r => r.label);
+  const packDisc = (show.couponPacks || []).map(c => c.label);
+  const allDiscs = [...new Set([...DEFAULT_DISCOUNTS, ...rewardDisc, ...packDisc])];
+  
   const discSel = document.getElementById('rm-disc');
   discSel.innerHTML = `<option value="">사용 안 함</option>` + allDiscs.map(d => `<option value="${d}">${d}</option>`).join('');
   if (selDisc) discSel.value = selDisc;
 
   const boardSel = document.getElementById('rm-board-select');
-  // 👇 이 부분 수정됨: 맨 앞에 '선택 안 함' 옵션 추가
   const boardOpts = `<option value="">선택 안 함 (도장 미적립)</option>` + 
     (show.boards || [{id:'b1', name:'도장판 1'}]).map(b => `<option value="${b.id}">${b.name}</option>`).join('');
   boardSel.innerHTML = boardOpts;
