@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>찍먹극 도장 계산기</title>
+<title>찍먹극 도장판</title>
 <link rel="manifest" href="manifest.json">
 <style>
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -104,7 +104,10 @@ body { background:var(--bg); color:var(--txt); font-family:'Pretendard', sans-se
 .collapsible-content { display:none; animation: fadeIn 0.2s ease; }
 .collapsible-content.open { display:block; }
 
-#layer-show-detail { display:none; position:fixed; inset:0; background:var(--bg); z-index:50; overflow-y:auto; padding:16px; padding-bottom:calc(var(--tab-h) + env(safe-area-inset-bottom, 0px) + 16px); animation: fadeIn 0.2s ease; }
+/* 레이어 (상세 및 보관함) */
+.full-layer { display:none; position:fixed; inset:0; background:var(--bg); z-index:50; overflow-y:auto; padding:16px; padding-bottom:calc(var(--tab-h) + env(safe-area-inset-bottom, 0px) + 16px); animation: fadeIn 0.2s ease; }
+#layer-archive-list { z-index: 40; } /* 상세 레이어보다 약간 아래 */
+
 </style>
 </head>
 <body>
@@ -145,7 +148,7 @@ body { background:var(--bg); color:var(--txt); font-family:'Pretendard', sans-se
     <div class="flex-between" style="margin-bottom: 16px; align-items: center;">
       <div class="page-title" style="margin:0;">공연 및 도장판</div>
       <div style="display: flex; gap: 8px;">
-        <button class="btn sm" onclick="openArchiveModal()">📦 보관함</button>
+        <button class="btn sm" onclick="openArchiveLayer()">📦 보관함</button>
         <button class="btn prim sm" onclick="openShowModal()">+ 공연 추가</button>
       </div>
     </div>
@@ -167,9 +170,21 @@ body { background:var(--bg); color:var(--txt); font-family:'Pretendard', sans-se
 </div>
 
 <!-- ============================================== -->
+<!-- 📦 보관함 레이어 (전체 화면) -->
+<!-- ============================================== -->
+<div id="layer-archive-list" class="full-layer">
+  <div class="flex-between" style="margin-bottom:16px;">
+    <button class="btn sm" onclick="closeArchiveLayer()">← 도장판으로</button>
+    <div class="page-title" style="margin:0;">📦 보관함</div>
+  </div>
+  <div style="font-size:12px; color:var(--txt4); margin-bottom:16px;">폐막했거나 보관 처리된 공연 목록입니다. 클릭 시 상세 내역이 열립니다.</div>
+  <div id="archive-list-container"></div>
+</div>
+
+<!-- ============================================== -->
 <!-- 공유 상세 뷰 레이어 (전체 화면 오버레이) -->
 <!-- ============================================== -->
-<div id="layer-show-detail">
+<div id="layer-show-detail" class="full-layer">
   <button class="btn sm" style="margin-bottom:16px;" onclick="closeShowDetail()">← 목록으로</button>
   <div class="card" id="detail-point-card" style="border-top: 4px solid var(--point);">
     <div class="flex-between" style="margin-bottom:12px;">
@@ -190,7 +205,8 @@ body { background:var(--bg); color:var(--txt); font-family:'Pretendard', sans-se
     </div>
     <div class="wallet-grid" id="sd-wallet-grid"></div>
     
-    <div style="font-size:12px; font-weight:700; color:var(--txt3); cursor:pointer; margin-top:12px; text-align:right;" onclick="toggleCollapsible('sd-wallet-history')">▶ 할인권 상세 기록 (접기/펴기)</div>
+    <!-- 좌측 정렬된 할인권 상세 기록 토글 -->
+    <div style="font-size:12px; font-weight:700; color:var(--txt3); cursor:pointer; margin-top:12px; text-align:left;" onclick="toggleCollapsible('sd-wallet-history')">▶ 할인권 상세 기록 (접기/펴기)</div>
     <div id="sd-wallet-history" class="collapsible-content" style="margin-top:12px; border-top:1px dashed var(--brd); padding-top:12px;">
       <div style="overflow-x:auto;">
         <table style="width:100%; text-align:center; font-size:11px; white-space:nowrap; border-collapse:collapse;">
@@ -227,17 +243,7 @@ body { background:var(--bg); color:var(--txt); font-family:'Pretendard', sans-se
   </div>
 </div>
 
-<!-- 📦 보관함 모달 -->
-<div class="overlay" id="modal-archive-list" onclick="if(event.target===this) closeModal('modal-archive-list')">
-  <div class="modal">
-    <div class="page-title" style="font-size:18px; margin-bottom:12px;">📦 보관함 목록</div>
-    <div style="font-size:12px; color:var(--txt4); margin-bottom:16px;">보관 처리된 공연 목록입니다. 클릭 시 상세 내역이 열립니다.</div>
-    <div id="archive-list-container" style="max-height: 50vh; overflow-y: auto;"></div>
-    <button class="btn" style="width:100%; margin-top:16px;" onclick="closeModal('modal-archive-list')">닫기</button>
-  </div>
-</div>
-
-<!-- 하단 탭 바 (보관함 탭은 제거됨) -->
+<!-- 하단 탭 바 -->
 <nav class="tab-bar">
   <button class="tab-btn active" onclick="switchTab('home', this)"><span class="icon">🎫</span>홈</button>
   <button class="tab-btn" onclick="switchTab('calendar', this)"><span class="icon">📅</span>스케줄</button>
@@ -365,7 +371,7 @@ body { background:var(--bg); color:var(--txt); font-family:'Pretendard', sans-se
       <input type="text" id="rm-memo" class="finput" placeholder="특이사항">
     </div>
 
-    <div style="display:flex; gap:10px; margin-top:24px;" id="rm-btns"></div>
+    <div id="rm-btns"></div>
   </div>
 </div>
 
@@ -458,6 +464,8 @@ window.onload = async () => {
 
 function switchTab(tabId, btnEl) {
   document.getElementById('layer-show-detail').style.display = 'none';
+  document.getElementById('layer-archive-list').style.display = 'none';
+  
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('page-' + tabId).classList.add('active');
@@ -644,7 +652,7 @@ async function renderCalendar() {
 }
 
 // ==========================================
-// 3. 공연 설정 / 도장판 탭
+// 3. 공연 설정 / 도장판 탭 / 보관함 레이어
 // ==========================================
 function addRewardRow(n='', label='', qty=1, isDiscount=true) {
   const container = document.getElementById('sm-rewards-container');
@@ -742,6 +750,7 @@ async function saveShow() {
   closeModal('modal-show');
   
   loadStampTab();
+  if (document.getElementById('layer-archive-list').style.display === 'block') openArchiveLayer();
   if (currentShowId === showData.id) renderShowDetail(showData.id);
 }
 
@@ -752,7 +761,7 @@ async function toggleArchiveShow(id) {
   closeModal('modal-show');
   closeShowDetail();
   loadStampTab();
-  if(document.getElementById('modal-archive-list').classList.contains('show')) openArchiveModal();
+  if (document.getElementById('layer-archive-list').style.display === 'block') openArchiveLayer();
 }
 
 async function deleteShow(id) {
@@ -763,7 +772,7 @@ async function deleteShow(id) {
   closeModal('modal-show');
   closeShowDetail();
   loadStampTab();
-  closeModal('modal-archive-list');
+  if (document.getElementById('layer-archive-list').style.display === 'block') openArchiveLayer();
 }
 
 async function loadStampTab() {
@@ -784,8 +793,8 @@ async function loadStampTab() {
   `).join('');
 }
 
-// 📦 보관함 모달
-async function openArchiveModal() {
+// 📦 보관함 레이어 열기
+async function openArchiveLayer() {
   const shows = await DB.getAll('shows');
   const archivedShows = shows.filter(s => s.isArchived).sort((a,b) => a.name.localeCompare(b.name));
   const container = document.getElementById('archive-list-container');
@@ -794,17 +803,21 @@ async function openArchiveModal() {
     container.innerHTML = '<div style="text-align:center; padding: 30px 0; color:var(--txt4);">보관함이 비어 있습니다.</div>';
   } else {
     container.innerHTML = archivedShows.map(s => `
-      <div class="card flex-between" style="cursor:pointer; border-left: 12px solid ${s.color}; margin-bottom:10px; padding: 24px 16px; background: var(--bg3);" onclick="closeModal('modal-archive-list'); renderShowDetail('${s.id}')">
-        <div style="font-weight:800; font-size:16px;">${s.name}</div>
-        <div style="font-size:12px; color:var(--txt4);">기록 보기 〉</div>
+      <div class="card flex-between" style="cursor:pointer; border-left: 12px solid ${s.color}; margin-bottom:12px; padding: 36px 20px; background: var(--bg3);" onclick="renderShowDetail('${s.id}')">
+        <div style="font-weight:800; font-size:18px;">${s.name}</div>
+        <div style="font-size:13px; color:var(--txt4);">기록 보기 〉</div>
       </div>
     `).join('');
   }
-  openModal('modal-archive-list');
+  document.getElementById('layer-archive-list').style.display = 'block';
+}
+
+function closeArchiveLayer() {
+  document.getElementById('layer-archive-list').style.display = 'none';
 }
 
 // ------------------------------------------
-// 쿠폰팩 관리
+// 쿠폰팩 모달
 // ------------------------------------------
 function addCouponRow(label='', qty=1) {
   const container = document.getElementById('cm-container');
@@ -927,17 +940,21 @@ async function renderShowDetail(showId) {
   (show.boards || []).forEach(b => boardCum[b.id] = 0);
 
   sortedRecords.forEach(r => {
+    // 날짜/시간 포맷: 06.22 14:00 
+    const timeStr = r.time ? ` ${r.time}` : '';
+    const dDisp = `${r.date.substring(5).replace('-', '.')}${timeStr}`;
+
     walletMap['재관람 할인표'].earned += 1;
     combinedWallet.push({
       id: 'auto_add_' + r.id, date: r.date, type: 'add',
-      items: { '재관람 할인표': 1 }, memo: '관극 적립', isAuto: true
+      items: { '재관람 할인표': 1 }, memo: `${dDisp} 관람 적립`, isAuto: true
     });
 
     if (r.usedDiscount && walletMap[r.usedDiscount]) {
       walletMap[r.usedDiscount].used += 1;
       combinedWallet.push({
         id: 'auto_sub_' + r.id, date: r.date, type: 'sub',
-        items: { [r.usedDiscount]: 1 }, memo: `${r.usedDiscount} 사용`, isAuto: true
+        items: { [r.usedDiscount]: 1 }, memo: `${dDisp} ${r.usedDiscount} 사용`, isAuto: true
       });
     }
 
@@ -954,7 +971,7 @@ async function renderShowDetail(showId) {
           walletMap[rew.label].earned += qty;
           combinedWallet.push({
             id: 'auto_ms_' + r.id + '_' + rew.label, date: r.date, type: 'add',
-            items: { [rew.label]: qty }, memo: `${rew.n}회 달성 보상`, isAuto: true
+            items: { [rew.label]: qty }, memo: `${dDisp} ${rew.n}회 달성 보상`, isAuto: true
           });
         }
       });
